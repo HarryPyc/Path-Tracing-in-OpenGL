@@ -1,16 +1,20 @@
 #version 430    
 layout(binding = 0, rgba32f)uniform image2D result;
 layout (local_size_x = 8, local_size_y = 8) in;
+uniform int Samples = 1;
 
 const int SPECULAR = 0, DIFFUSE = 1, REFRACTION = 2;
 const int WIDTH = 1280, HEIGHT = 720;
+const int MAX_BOUNCE = 6;
 const vec3 camPos = vec3(0,0,150), 
 		   ray00 = normalize(vec3(-80,-45,45)-camPos), ray01 = normalize(vec3(-80,45,45)-camPos),
 		   ray10 = normalize(vec3( 80,-45,45)-camPos), ray11 = normalize(vec3( 80,45,45)-camPos);
-const double epsilon = 1e-4, inf = 1e6, PI = 3.1415926;
+const float epsilon = 1e-4, inf = 1e6, PI = 3.1415926;
 
-double rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+float seed;
+float rand(vec2 co){
+	seed++;
+    return fract(sin((seed+Samples)/100.f*dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 struct Ray{
 	vec3 origin, dir;
@@ -18,63 +22,104 @@ struct Ray{
 	vec2 seed;
 };
 struct Sphere{
-	double radius;
+	float radius;
 	vec3 pos, emission, color;
 	int type;
-	double intersect(Ray ray){
-		vec3 op = pos - ray.origin;
-		double t, b=dot(op, ray.dir), det=b*b-dot(op, op)+radius*radius; 
-		if (det<0) return 0; else det=sqrt(det); 
-		return (t=b-det)>epsilon ? t : ((t=b+det)>epsilon ? t : 0); 
+	float intersect(Ray ray){
+		vec3 op = ray.origin - pos;
+		float t, b=dot(op, ray.dir), det=b*b-dot(op, op)+radius*radius; //a=1
+		if (det<=0) return 0; else det=sqrt(det); 
+		return t = (-b-det)>epsilon? (-b-det) : max((-b+det), 0); 
 	}
 };
 Sphere spheres[] = {//Scene: radius, position, emission, color, material 
-   Sphere(30,  vec3(-40, -15, 0),       vec3(0),     vec3(0,1,1), SPECULAR),//Mirr 
-   Sphere(30,vec3(45,-15,20),       vec3(0),vec3(1,1,0), REFRACTION),//Glas 
+   Sphere(20,  vec3(-45, -25, 30),       vec3(0,0,0),     vec3(0.9), REFRACTION),//Mirr 
+   Sphere(30,vec3(45,-15,20),       vec3(0,0,0),vec3(0.75,0.75,0.25), REFRACTION),//Glas 
    Sphere(1e5, vec3(-1e5-80, 0, 0), vec3(0),vec3(0.75,0.25,0.25),DIFFUSE),//Left 
    Sphere(1e5, vec3(1e5+80, 0, 0),vec3(0),vec3(0.25,0.25,0.75),DIFFUSE),//Rght 
-   Sphere(1e5, vec3(0, 0, -1e5-45),     vec3(0),vec3(.75,.75,.75),DIFFUSE),//Back 
-   //Sphere(1e5, vec3(0, 0, 1e5+45), vec3(0),vec3(0,0,0),           DIFFUSE),//Frnt 
+   Sphere(1e5, vec3(0, 0, -1e5-45),     vec3(0),vec3(.25,.75,.25),DIFFUSE),//Back 
+//   Sphere(1e5, vec3(0, 0, 1e5+45), vec3(0),vec3(0,0,0),           DIFFUSE),//Frnt 
    Sphere(1e5, vec3(0, -1e5-45, 0),    vec3(0),vec3(.75,.75,.75),DIFFUSE),//Bottom 
    Sphere(1e5, vec3(0,  1e5+45, 0),    vec3(0),vec3(.75,.75,.75),DIFFUSE),//Top 
-   Sphere(600, vec3(0,644,0),vec3(12,12,12),  vec3(0), DIFFUSE) //Lite 
+   Sphere(600, vec3(0,644,0),vec3(5),  vec3(0), DIFFUSE) //Lite 
  }; 
 
 vec3 Trace(Ray ray){
-	double t = inf; int id = -1;
-	for(int i = 0; i<spheres.length();i++){
-		double _t = spheres[i].intersect(ray);
-		if(_t < t && _t > epsilon){
-			t = _t;
-			id = i;
+	vec3[MAX_BOUNCE*2] emits, colors;
+	int i; float f = 1.0;
+	for(i = 0; i < MAX_BOUNCE*2;i++){
+		float t = inf; int id = -1;
+		for(int j = 0; j<spheres.length();j++){
+			float _t = spheres[j].intersect(ray)-0.05;
+			if(_t < t && _t > epsilon){
+				t = _t;
+				id = j;
+			}
 		}
+		if(id == -1) break;
+		const Sphere obj = spheres[id];
+		vec3 hit = ray.origin + ray.dir*t;
+		vec3 normal = normalize(hit-obj.pos);
+		vec3 n = dot(normal,ray.dir)>0? -normal:normal;
+		//Russian Roulette Path Termination
+		float p = min(0.95, max(max(obj.color.x, obj.color.y), obj.color.z));
+		if(ray.depth++ >= MAX_BOUNCE)
+			if(abs(rand(ray.seed))>p){
+				emits[i] = obj.emission;
+				colors[i] = vec3(0);
+				break;
+			}
+		if(obj.type == SPECULAR){
+			ray.origin = hit; ray.dir = reflect(ray.dir,n);
+		}
+		else if(obj.type == DIFFUSE){
+			vec3 u = abs(n.x) < 1-epsilon? cross(vec3(1,0,0),n):cross(vec3(1),n);
+			u = normalize(u);
+			vec3 v = cross(u,n);
+			float w = rand(ray.seed), theta = rand(ray.seed);
+			vec3 d = w*cos(2*PI*theta)*u + w*sin(2*PI*theta)*v + sqrt(1-w*w)*n;
+			ray.origin = hit; ray.dir = d;
+
+		}
+		else if(obj.type == REFRACTION){
+			float nc = 1.0, ng = 1.5; //Refraction index
+			bool inside = dot(normal,n)<0;
+			float eta = inside? ng/nc : nc/ng, R0 = pow((nc-ng)/(nc+ng), 2), c = abs(dot(ray.dir, n));
+			float k = 1.0 - eta * eta * (1.0 - c*c);
+			ray.origin = hit; 
+			if(k < 0)
+				ray.dir = reflect(ray.dir, n);
+			else{
+				float Re = R0 + (1-R0)*pow(1-c,5);
+				if(abs(rand(ray.seed))<Re)
+					ray.dir = reflect(ray.dir, n);
+				else{
+					ray.dir= (eta * ray.dir - (eta * dot(n, ray.dir) + sqrt(k)) * n);
+				}
+			}
+		}
+
+		emits[i] = obj.emission;
+		colors[i] = obj.color * f;
 	}
-	if(id != -1)
-		return spheres[id].color;
-	return vec3(0);
+	vec3 res = vec3(0);
+	for(; i >=0;i--){
+		res = emits[i] + colors[i]*res;
+	}
+	return res;
 }
 void main(void)
 {
-	vec3 color = vec3(0);
-//	vec3 dir = (gl_WorkGroupID.x/WIDTH*2-1)*vec3(0.577,0,0) + (gl_WorkGroupID.y/HEIGHT*2-1)*vec3(0,0.325,0)
-//		+ camDir;
-//	for(int i = 0; i < 4; i++){
-//		for(int j = 0; j < 4; j++){
-//			vec2 seed = vec2(i,j);
-//			double theta = rand(seed);
-//			//vec3 turb = float(epsilon)*vec3(cos(float(2*PI*theta)), sin(float(2*PI*theta)), 0);
-//			Ray ray = Ray(camPos, normalize(dir), 0, gl_GlobalInvocationID.xy);
-//			color += Trace(ray);
-//		}
-//	}
+	vec3 color;
 	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-	if(pixel.x>WIDTH || pixel.y>HEIGHT)
+	if(pixel.x>=WIDTH || pixel.y>=HEIGHT)
 		return;
 	vec2 pos = vec2(pixel)/vec2(WIDTH, HEIGHT);
+	pos += vec2(rand(pixel), rand(pixel))*2e-3;
 	vec3 dir = mix(mix(ray00,ray10,pos.x), mix(ray01,ray11,pos.x), pos.y);
 	color = Trace(Ray(camPos, normalize(dir),0,pixel));
 
-	color = pow(color, vec3(1/2.2));//Gamma Correction
-
-	imageStore(result, pixel, vec4(color,1));
+	color += vec3(imageLoad(result, pixel))*(Samples-1);
+	barrier();
+	imageStore(result, pixel, vec4(color/Samples,1));
 }

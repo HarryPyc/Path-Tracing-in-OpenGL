@@ -6,13 +6,17 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
+	Samples = 0;
 }
 void Render::render() {
+	Samples++;
 	//compute ray tracing
 	glUseProgram(compute_shader);
 	result->activate(compute_shader, 0);
-	glBindImageTexture(0, result->texture_id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(0, result->texture_id, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+	glUniform1i(glGetUniformLocation(compute_shader, "Samples"), Samples);
 	glDispatchCompute(160, 90, 1);
+
 	//render result image
 	glUseProgram(quad_shader);
 	result->activate(quad_shader, 0);

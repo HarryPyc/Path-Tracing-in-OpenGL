@@ -11,6 +11,7 @@ public:
 	void render();
 
 	Texture2D *result;
+	int Samples;
 	static Render& getInstance();
 private:
 	GLuint quad_vao;

@@ -10,7 +10,9 @@ void display() {
 	Render::getInstance().render();
 	glutSwapBuffers();
 }
-
+void idle() {
+	glutPostRedisplay();
+}
 void printGlInfo()
 {
 	std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
@@ -21,8 +23,6 @@ void printGlInfo()
 
 int main(int argc, char** argv)
 {
-	
-
 	//init glut
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
@@ -35,6 +35,7 @@ int main(int argc, char** argv)
 	printGlInfo();
 
 	glutDisplayFunc(display);
+	glutIdleFunc(idle);
 
 	glutMainLoop();
 	glutDestroyWindow(window);
