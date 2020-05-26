@@ -6,6 +6,7 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
+	cam = new Camera(glm::vec3(0, -20, 150), glm::vec3(0), glm::vec3(0, 1, 0));
 	Samples = 0;
 }
 void Render::render() {
@@ -15,6 +16,7 @@ void Render::render() {
 	result->activate(compute_shader, 0);
 	glBindImageTexture(0, result->texture_id, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glUniform1i(glGetUniformLocation(compute_shader, "Samples"), Samples);
+	cam->upload(compute_shader);
 	glDispatchCompute(160, 90, 1);
 
 	//render result image

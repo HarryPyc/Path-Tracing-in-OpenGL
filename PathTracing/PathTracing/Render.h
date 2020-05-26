@@ -4,12 +4,14 @@
 #include "InitShader.h"
 #include "Texture2D.h"
 #include "GlobalConstant.h"
+#include "Camera.h"
 
 class Render {
 public:
 	void init();
 	void render();
 
+	Camera* cam;
 	Texture2D *result;
 	int Samples;
 	static Render& getInstance();

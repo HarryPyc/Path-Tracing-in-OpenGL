@@ -6,7 +6,9 @@
 
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT);
-	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+	const int w = glutGet(GLUT_WINDOW_WIDTH);
+	const int h = glutGet(GLUT_WINDOW_HEIGHT);
+	glViewport(0, 0, w, h);
 	Render::getInstance().render();
 	glutSwapBuffers();
 }

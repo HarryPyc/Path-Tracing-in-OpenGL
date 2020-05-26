@@ -161,12 +161,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="InitShader.cpp" />
     <ClCompile Include="PathTracing.cpp" />
     <ClCompile Include="Render.cpp" />
     <ClCompile Include="Texture2D.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="GlobalConstant.h" />
     <ClInclude Include="InitShader.h" />
     <ClInclude Include="Render.h" />
