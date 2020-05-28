@@ -1,4 +1,5 @@
 #pragma once
+
 #include <GL/glew.h>
 #include <string>
 class Texture2D
@@ -12,5 +13,7 @@ public:
 		GLint internalFormat = GL_RGBA32F, GLint type = GL_FLOAT, GLint wrap = GL_REPEAT);
 
 	void activate(GLuint program, GLuint textureLoc);
+	void print(std::string name);
+
 };
 

@@ -1,4 +1,6 @@
 #include "Texture2D.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 Texture2D::Texture2D(const std::string name, int w, int h, GLenum magFilter, GLenum minFilter, GLint internalFormat, GLint type, GLint wrap)
 {
     glGenTextures(1, &texture_id);
@@ -24,4 +26,10 @@ void Texture2D::activate(GLuint program, GLuint textureLoc)
     {
         glUniform1i(tex_loc, textureLoc); // we bound our texture to texture unit 0
     }
+}
+
+void Texture2D::print(std::string name) {
+    GLubyte* pixels = new GLubyte[width * height * 4];
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    stbi_write_bmp(name.c_str(), width, height, 4, pixels);
 }

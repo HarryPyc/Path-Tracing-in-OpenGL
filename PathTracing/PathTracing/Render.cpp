@@ -11,19 +11,20 @@ void Render::init() {
 }
 void Render::render() {
 	Samples++;
-	//compute ray tracing
+	//ray tracing
 	glUseProgram(compute_shader);
 	result->activate(compute_shader, 0);
 	glBindImageTexture(0, result->texture_id, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glUniform1i(glGetUniformLocation(compute_shader, "Samples"), Samples);
 	cam->upload(compute_shader);
-	glDispatchCompute(160, 90, 1);
+	glDispatchCompute(40, 30, 1);
 
 	//render result image
 	glUseProgram(quad_shader);
 	result->activate(quad_shader, 0);
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
 }
 Render& Render::getInstance() {
 	static Render app;
@@ -34,10 +35,10 @@ void Render::create_quad_vao() {
 	glBindVertexArray(quad_vao);
 
 	double vertices[] = {
-		-1,  1, 0, 0, 1,
-		-1, -1, 0, 0, 0,
-		 1,  1, 0, 1, 1,
-		 1, -1, 0, 1, 0
+		-1,  1, 0, 0, 0,
+		-1, -1, 0, 0, 1,
+		 1,  1, 0, 1, 0,
+		 1, -1, 0, 1, 1
 	};
 	GLuint vbo = -1;
 	glGenBuffers(1, &vbo);
