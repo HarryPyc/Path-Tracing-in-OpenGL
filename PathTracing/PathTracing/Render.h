@@ -5,6 +5,7 @@
 #include "Texture2D.h"
 #include "GlobalConstant.h"
 #include "Camera.h"
+#include "ThermalData.h"
 
 class Render {
 public:
