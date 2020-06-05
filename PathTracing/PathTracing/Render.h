@@ -11,7 +11,7 @@ class Render {
 public:
 	void init();
 	void render();
-
+	
 	Camera* cam;
 	Texture2D *result;
 	int Samples;
@@ -20,5 +20,8 @@ private:
 	GLuint quad_vao;
 	GLuint quad_shader, compute_shader;
 	void create_quad_vao();
+
+	int nu;
+	bool isRight;
 };
 

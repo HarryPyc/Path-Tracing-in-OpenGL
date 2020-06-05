@@ -1,6 +1,8 @@
 #pragma once
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+
+
 const float Wave[] = {
    7.8576538e+02, 8.1770000e+02, 8.6250000e+02, 9.1025000e+02,
    9.4255000e+02, 9.7750000e+02, 1.0277500e+03, 1.0780000e+03,
@@ -26,7 +28,6 @@ const float Temprature[] = {
     //light, sphere, cone
       100,   72.5f,  37
 };
-const int index = 0;
 const double c = 299792458, k = 138064852e-31, PI = 3.141592653589793238463,
              h = 2 * PI * 105457180e-42;
-void uploadThermalData(GLuint program);
+void uploadThermalData(GLuint program, int index);

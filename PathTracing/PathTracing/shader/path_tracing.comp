@@ -94,13 +94,13 @@ vec3 Trace(Ray ray){
 			}
 		}
 		if(id == -1 ) break;
-		t-=0.1;if(t<epsilon)break;
+		t-=0.05;if(t<epsilon)break;
 		
 		
 		vec3 emission,color,normal, hit = ray.origin + ray.dir*t; int type;
 		switch(object){
-		case 0:{ emission = vec3(Intensity[id]); color = Reflectivity[id]*spheres[id].color; normal = normalize(hit-spheres[id].pos);type = spheres[id].type;break;}
-		case 1:{ emission = vec3(Intensity[id+8]); color = Reflectivity[id+8]*cones[id].color; 
+		case 0:{ emission = vec3(Intensity[id]); color = vec3(Reflectivity[id]); normal = normalize(hit-spheres[id].pos);type = spheres[id].type;break;}
+		case 1:{ emission = vec3(Intensity[id+8]); color = vec3(Reflectivity[id+8]); 
 				 vec3 cp = hit-cones[id].tip, bn = cross(cones[id].axis, cp); normal = normalize(cross(bn, cp)); type = cones[id].type; break;}
 		default:
 			break;

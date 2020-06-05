@@ -2,6 +2,11 @@
 
 #include <GL/glew.h>
 #include <string>
+#include <glm/glm.hpp>
+#include<fstream>
+#include <iostream>
+using namespace std;
+
 class Texture2D
 {
 public:
@@ -14,6 +19,7 @@ public:
 
 	void activate(GLuint program, GLuint textureLoc);
 	void print(std::string name);
+	void clear(glm::vec4 color);
 
 };
 

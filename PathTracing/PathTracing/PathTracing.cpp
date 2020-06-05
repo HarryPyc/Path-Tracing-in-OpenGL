@@ -14,12 +14,13 @@ void display() {
 }
 void idle() {
 	glutPostRedisplay();
+	
 }
 void keyboard(unsigned char key, int x, int y) {
 	switch(key)
 	{
 	case 19: {
-		std::string name = "screenshots/" + std::to_string(Render::getInstance().Samples) + "Samples.bmp";
+		std::string name = "text/" + std::to_string(Render::getInstance().Samples) + "Samples.txt";
 		Render::getInstance().result->print(name);
 		break;
 	}

@@ -6,10 +6,10 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
-	cam = new Camera(glm::vec3(150, 150, 1100), glm::vec3(150,150,600), glm::vec3(0, 1, 0));
-	uploadThermalData(compute_shader);
-	cam->upload(compute_shader);
-	Samples = 0;
+	cam = new Camera(glm::vec3(200, 150, 1100), glm::vec3(200,150,600), glm::vec3(0, 1, 0));
+	uploadThermalData(compute_shader, 0);
+
+	Samples = 0; nu = 0; isRight = true;
 }
 void Render::render() {
 	Samples++;
@@ -17,6 +17,7 @@ void Render::render() {
 	glUseProgram(compute_shader);
 	result->activate(compute_shader, 0);
 	glBindImageTexture(0, result->texture_id, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+	cam->upload(compute_shader);
 	glUniform1i(glGetUniformLocation(compute_shader, "Samples"), Samples);
 	glDispatchCompute(40, 30, 1);
 
@@ -26,6 +27,20 @@ void Render::render() {
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+	if (Samples == 8192 && nu <11) {
+		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+(isRight?"Right":"Left")+".txt";
+		Render::getInstance().result->print(name);
+		result->clear(glm::vec4(0)); Samples = 0;
+		if (isRight) {
+			cam->pos.x = 100;
+		}
+		else if(nu < 10){
+			nu++;
+			cam->pos.x = 200;
+			uploadThermalData(compute_shader, nu);
+		}
+		isRight = !isRight;
+	}
 }
 Render& Render::getInstance() {
 	static Render app;
