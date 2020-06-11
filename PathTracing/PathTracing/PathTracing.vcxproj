@@ -100,7 +100,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp.lib;freeglut.lib;glew32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
@@ -137,7 +137,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp.lib;freeglut.lib;glew32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
@@ -163,23 +163,34 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="InitShader.cpp" />
+    <ClCompile Include="LoadMesh.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="PathTracing.cpp" />
     <ClCompile Include="Render.cpp" />
+    <ClCompile Include="SimpleShapes.cpp" />
     <ClCompile Include="Texture2D.cpp" />
     <ClCompile Include="ThermalData.cpp" />
+    <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GlobalConstant.h" />
     <ClInclude Include="InitShader.h" />
+    <ClInclude Include="LoadMesh.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Render.h" />
+    <ClInclude Include="SimpleShapes.h" />
     <ClInclude Include="Texture2D.h" />
     <ClInclude Include="ThermalData.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\path_tracing.comp" />
     <None Include="shader\quad.frag" />
     <None Include="shader\quad.vert" />
+    <None Include="shader\vertex_process.comp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

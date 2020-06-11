@@ -7,9 +7,17 @@ void Render::init() {
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
 	cam = new Camera(glm::vec3(200, 150, 1100), glm::vec3(200,150,600), glm::vec3(0, 1, 0));
-	uploadThermalData(compute_shader, 0);
+	//uploadThermalData(compute_shader, 0);
 
 	Samples = 0; nu = 0; isRight = true;
+
+	Mesh* cube = new Mesh("asset/model/cube.obj", glm::vec3(200,50,500), Material::Orange());
+	cube->transform->Scale(glm::vec3(50)); cube->material->mode = 1;
+	cube->transform->Rotate(30, glm::vec3(0, 1, 0));
+	meshes.push_back(cube);
+
+	initSSBO();
+	vertexProcess();
 }
 void Render::render() {
 	Samples++;
@@ -27,7 +35,8 @@ void Render::render() {
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	if (Samples == 8192 && nu <11) {
+	//automatically print results
+	/*if (Samples == 8192 && nu <11) {
 		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+(isRight?"Right":"Left")+".txt";
 		Render::getInstance().result->print(name);
 		result->clear(glm::vec4(0)); Samples = 0;
@@ -40,11 +49,41 @@ void Render::render() {
 			uploadThermalData(compute_shader, nu);
 		}
 		isRight = !isRight;
-	}
+	}*/
 }
 Render& Render::getInstance() {
 	static Render app;
 	return app;
+}
+void Render::initSSBO()
+{
+	for (int i = 0; i < meshes.size(); i++) {
+		meshes[i]->initCSData(CSdataList, Vertices, Indices, i);
+		Indices.push_back(99999);
+	}
+	GLuint ubo, Vssbo, Issbo;
+	glGenBuffers(1, &ubo);
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(CSMeshData) * CSdataList.size(), &CSdataList[0], GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glGenBuffers(1, &Vssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Vssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * Vertices.size(), &Vertices[0], GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Vssbo);
+	glGenBuffers(1, &Issbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Issbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int)*Indices.size(), &Indices[0], GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Issbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+void Render::vertexProcess()
+{
+	GLuint vpProgram = InitShader(vertex_process_shader.c_str());
+	glUseProgram(vpProgram);
+	glDispatchCompute(10, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glUseProgram(0);
 }
 void Render::create_quad_vao() {
 	glGenVertexArrays(1, &quad_vao);

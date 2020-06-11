@@ -36,6 +36,21 @@
     <ClCompile Include="ThermalData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LoadMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleShapes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InitShader.h">
@@ -56,6 +71,21 @@
     <ClInclude Include="ThermalData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LoadMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleShapes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\quad.frag">
@@ -65,6 +95,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shader\path_tracing.comp">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shader\vertex_process.comp">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

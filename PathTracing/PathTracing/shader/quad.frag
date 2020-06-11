@@ -9,5 +9,5 @@ out vec4 fragcolor;
 void main(void){
 	fragcolor = texture2D(result, tex_coord);
 	
-	//fragcolor = pow(fragcolor,vec4(1/2.2));//Gamma Correction
+	fragcolor = pow(fragcolor,vec4(1/2.2));//Gamma Correction
 }
