@@ -15,6 +15,10 @@ void Render::init() {
 	cube->transform->Scale(glm::vec3(50)); cube->material->mode = 1;
 	cube->transform->Rotate(30, glm::vec3(0, 1, 0));
 	meshes.push_back(cube);
+	Mesh* obj2 = new Mesh("asset/model/bunny.obj", glm::vec3(90, 0, 600), Material::Blue());
+	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 1;
+	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
+	meshes.push_back(obj2);
 
 	initSSBO();
 	vertexProcess();
@@ -59,7 +63,6 @@ void Render::initSSBO()
 {
 	for (int i = 0; i < meshes.size(); i++) {
 		meshes[i]->initCSData(CSdataList, Vertices, Indices, i);
-		Indices.push_back(99999);
 	}
 	GLuint ubo, Vssbo, Issbo;
 	glGenBuffers(1, &ubo);
@@ -82,7 +85,7 @@ void Render::vertexProcess()
 	GLuint vpProgram = InitShader(vertex_process_shader.c_str());
 	glUseProgram(vpProgram);
 	glDispatchCompute(10, 1, 1);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	///glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glUseProgram(0);
 }
 void Render::create_quad_vao() {

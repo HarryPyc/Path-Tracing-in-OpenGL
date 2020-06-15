@@ -13,6 +13,7 @@ struct CSMeshData{
 	glm::vec3 emission;
 	float reflectivity;
 	glm::mat4 M;
+	int numVert, numIdx, PADDING0, PADDING1;
 };
 class Mesh
 {

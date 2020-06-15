@@ -29,7 +29,7 @@ public:
 	}
 
 	static Material* Blue() {
-		return new Material(glm::vec3(0, 0, 1));
+		return new Material(glm::vec3(0.1, 0.1, 0.75));
 	}
 
 	static Material* Green() {
@@ -45,7 +45,7 @@ public:
 	}
 
 	static Material* Pink() {
-		return new Material(glm::vec3(1, 0.75, 0.8));
+		return new Material(glm::vec3(0.99, 0.75, 0.8));
 	}
 };
 

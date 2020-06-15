@@ -53,16 +53,20 @@ void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices,
 	CSdata.mode = material->mode;
 	CSdata.reflectivity = material->reflectivity;
 	CSdata.M = transform->M;
-	CSDataList.push_back(CSdata);
 	if (mode == complex) {
 		for (int i = 0; i < meshdata.vertices.size(); i++)
 			vertices.push_back(glm::vec4(meshdata.vertices[i], index));
 		indices.insert(indices.end(), meshdata.indices.begin(), meshdata.indices.end());
+		CSdata.numVert = meshdata.vertices.size();
+		CSdata.numIdx = meshdata.indices.size();
 	}
 	else
 	{
 		for (int i = 0; i < shape->vertices.size(); i++)
 			vertices.push_back(glm::vec4(shape->vertices[i].pos, index));
 		indices.insert(indices.end(), shape->indices.begin(), shape->indices.end());
+		CSdata.numVert = shape->vertices.size();
+		CSdata.numIdx = shape->indices.size();
 	}
+	CSDataList.push_back(CSdata);
 }
