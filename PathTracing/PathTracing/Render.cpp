@@ -18,7 +18,7 @@ void Render::init() {
 	Mesh* obj2 = new Mesh("asset/model/bunny.obj", glm::vec3(90, 0, 600), Material::Blue());
 	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 1;
 	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
-	meshes.push_back(obj2);
+	//meshes.push_back(obj2);
 
 	initSSBO();
 	vertexProcess();
@@ -85,7 +85,7 @@ void Render::vertexProcess()
 	GLuint vpProgram = InitShader(vertex_process_shader.c_str());
 	glUseProgram(vpProgram);
 	glDispatchCompute(10, 1, 1);
-	///glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glUseProgram(0);
 }
 void Render::create_quad_vao() {

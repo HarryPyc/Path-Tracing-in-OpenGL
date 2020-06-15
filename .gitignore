@@ -92,7 +92,7 @@ StyleCopReport.xml
 *.pidb
 *.svclog
 *.scc
-
+!PathTracing/PathTracing/asset/model/*.obj
 # Chutzpah Test files
 _Chutzpah*
 
