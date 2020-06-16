@@ -15,10 +15,10 @@ void Render::init() {
 	cube->transform->Scale(glm::vec3(50)); cube->material->mode = 1;
 	cube->transform->Rotate(30, glm::vec3(0, 1, 0));
 	meshes.push_back(cube);
-	Mesh* obj2 = new Mesh("asset/model/bunny.obj", glm::vec3(90, 0, 600), Material::Blue());
-	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 1;
-	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
-	//meshes.push_back(obj2);
+	Mesh* obj2 = new Mesh("asset/model/bunny.obj", glm::vec3(90, 0, 700), Material::Blue());
+	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 0;
+	obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
+	meshes.push_back(obj2);
 
 	initSSBO();
 	vertexProcess();
@@ -32,7 +32,7 @@ void Render::render() {
 	cam->upload(compute_shader);
 	glUniform1i(glGetUniformLocation(compute_shader, "Samples"), Samples);
 	glDispatchCompute(40, 30, 1);
-
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	//render result image
 	glUseProgram(quad_shader);
 	result->activate(quad_shader, 0);
