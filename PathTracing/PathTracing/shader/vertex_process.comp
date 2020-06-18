@@ -17,13 +17,28 @@ layout(std140, binding = 1) uniform CSMeshBlock{
 layout(std430, binding = 2) buffer VertexLayer{
 	vec4 Vertices[];
 };
+layout(std430, binding = 3) buffer TriangleLayer{
+	uvec4 Triangles[];
+};
 
 void main(void)
 {
 	const uint index = gl_GlobalInvocationID.x;
-
-	if(index >= Vertices.length()) return;
-	const uint i = uint(Vertices[index].w);
-	Vertices[index] = CSdataList[i].M*vec4(vec3(Vertices[index]),1);
-	Vertices[index].w = i;
+	if(index < Triangles.length()){
+		int vert_offset = 0, idx_offset = int(index)*3;
+		for(int c = 0; c < CSdataList.length();c++){
+			idx_offset -= CSdataList[c].numIdx ;
+			if(idx_offset >= 0)
+				vert_offset += CSdataList[c].numVert;
+			else{
+				break;
+			}
+		}
+		Triangles[index] += uvec4(uvec3(vert_offset), 0);
+	}
+	if(index < Vertices.length()){
+		const uint i = uint(Vertices[index].w);
+		Vertices[index] = CSdataList[i].M*vec4(vec3(Vertices[index]),1);
+		Vertices[index].w = i;
+	}
 }

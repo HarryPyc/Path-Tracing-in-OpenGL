@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "ThermalData.h"
 #include "Mesh.h"
+#include "KdTree.h"
 
 class Render {
 public:
@@ -19,18 +20,18 @@ public:
 	static Render& getInstance();
 
 private:
-	GLuint quad_vao;
+	GLuint quad_vao, ubo, Vssbo, Issbo,TreeUBO;
 	GLuint quad_shader, compute_shader;
 	int nu;
 	bool isRight;
 
 	vector<Mesh*> meshes;
 	vector<CSMeshData> CSdataList;
-	vector<glm::vec4> Vertices;
-	vector<unsigned int> Indices;
+	KdTree* tree;
 	
 	void initSSBO();
 	void vertexProcess();
+	void uploadTree();
 	void create_quad_vao();
 
 };

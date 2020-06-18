@@ -7,6 +7,7 @@ void Render::init() {
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
 	cam = new Camera(glm::vec3(200, 150, 1100), glm::vec3(200,150,600), glm::vec3(0, 1, 0));
+	tree = new KdTree();
 	//uploadThermalData(compute_shader, 0);
 
 	Samples = 0; nu = 0; isRight = true;
@@ -15,6 +16,10 @@ void Render::init() {
 	cube->transform->Scale(glm::vec3(50)); cube->material->mode = 1;
 	cube->transform->Rotate(30, glm::vec3(0, 1, 0));
 	meshes.push_back(cube);
+	//Mesh* obj2 = new Mesh("asset/model/cube.obj", glm::vec3(70, 40, 700), Material::Blue());
+	//obj2->transform->Scale(glm::vec3(40)); obj2->material->mode = 0;
+	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
+	//meshes.push_back(obj2);
 	Mesh* obj2 = new Mesh("asset/model/bunny.obj", glm::vec3(90, 0, 700), Material::Blue());
 	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 0;
 	obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
@@ -22,6 +27,8 @@ void Render::init() {
 
 	initSSBO();
 	vertexProcess();
+	tree->ConstructKdTree();
+	uploadTree();
 }
 void Render::render() {
 	Samples++;
@@ -62,9 +69,8 @@ Render& Render::getInstance() {
 void Render::initSSBO()
 {
 	for (int i = 0; i < meshes.size(); i++) {
-		meshes[i]->initCSData(CSdataList, Vertices, Indices, i);
+		meshes[i]->initCSData(CSdataList, tree->Vertices, tree->Triangles, i);
 	}
-	GLuint ubo, Vssbo, Issbo;
 	glGenBuffers(1, &ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(CSMeshData) * CSdataList.size(), &CSdataList[0], GL_DYNAMIC_COPY);
@@ -72,11 +78,11 @@ void Render::initSSBO()
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	glGenBuffers(1, &Vssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Vssbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * Vertices.size(), &Vertices[0], GL_DYNAMIC_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * tree->Vertices.size(), &tree->Vertices[0], GL_DYNAMIC_COPY);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Vssbo);
 	glGenBuffers(1, &Issbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Issbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int)*Indices.size(), &Indices[0], GL_DYNAMIC_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::uvec4)* tree->Triangles.size(), &tree->Triangles[0], GL_DYNAMIC_COPY);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Issbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
@@ -84,9 +90,26 @@ void Render::vertexProcess()
 {
 	GLuint vpProgram = InitShader(vertex_process_shader.c_str());
 	glUseProgram(vpProgram);
-	glDispatchCompute(10, 1, 1);
+	glDispatchCompute(50, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glUseProgram(0);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Vssbo);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::vec4) * tree->Vertices.size(), &tree->Vertices[0]);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Issbo);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::uvec4) * tree->Triangles.size(), &tree->Triangles[0]);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+void Render::uploadTree()
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Issbo);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::uvec4) * tree->Triangles.size(), &tree->Triangles[0]);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glGenBuffers(1, &TreeUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, TreeUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(TreeNode) * tree->nodeList.size(), &tree->nodeList[0], GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 4, TreeUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 void Render::create_quad_vao() {
 	glGenVertexArrays(1, &quad_vao);

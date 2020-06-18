@@ -35,6 +35,6 @@ public:
 	void render(GLuint program);
 	void draw();
 	
-	void initCSData(vector<CSMeshData>& CSDataList, vector<glm::vec4>& vectices, vector<unsigned int>& indices, int index);
+	void initCSData(vector<CSMeshData>& CSDataList, vector<glm::vec4>& vectices, vector<glm::uvec4>& triangles, int index);
 };
 

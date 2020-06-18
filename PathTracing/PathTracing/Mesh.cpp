@@ -46,7 +46,7 @@ void Mesh::draw() {
 	}
 }
 
-void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices, vector<unsigned int>& indices, int index) {
+void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices, vector<glm::uvec4>& triangles, int index) {
 	CSMeshData CSdata;
 	CSdata.color = material->color;
 	CSdata.emission = material->emission;
@@ -56,7 +56,10 @@ void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices,
 	if (mode == complex) {
 		for (int i = 0; i < meshdata.vertices.size(); i++)
 			vertices.push_back(glm::vec4(meshdata.vertices[i], index));
-		indices.insert(indices.end(), meshdata.indices.begin(), meshdata.indices.end());
+		for (int i = 0; i < meshdata.indices.size()-2; i += 3) {
+			glm::uvec4 tri = glm::uvec4(meshdata.indices[i], meshdata.indices[i + 1], meshdata.indices[i + 2], index);
+			triangles.push_back(tri);
+		}
 		CSdata.numVert = meshdata.vertices.size();
 		CSdata.numIdx = meshdata.indices.size();
 	}
@@ -64,7 +67,10 @@ void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices,
 	{
 		for (int i = 0; i < shape->vertices.size(); i++)
 			vertices.push_back(glm::vec4(shape->vertices[i].pos, index));
-		indices.insert(indices.end(), shape->indices.begin(), shape->indices.end());
+		for (int i = 0; i < shape->indices.size() - 2; i += 3) {
+			glm::uvec4 tri = glm::uvec4(shape->indices[i], shape->indices[i + 1], shape->indices[i + 2], index);
+			triangles.push_back(tri);
+		}
 		CSdata.numVert = shape->vertices.size();
 		CSdata.numIdx = shape->indices.size();
 	}

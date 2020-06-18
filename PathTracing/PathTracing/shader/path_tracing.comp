@@ -24,6 +24,11 @@ struct CSMeshData{
 	mat4 M;
 	int numVert, numIdx, PADDING0, PADDING1;
 };
+struct TreeNode {
+	unsigned int axis; bool isLeaf; int firstTriangle, triangleCount;
+	vec3 minBb; int left;
+	vec3 maxBb; int right;
+};
 layout(std140, binding = 1) uniform CSMeshBlock{
 	CSMeshData CSdataList[2];
 };
@@ -31,8 +36,11 @@ layout(std140, binding = 1) uniform CSMeshBlock{
 layout(std430, binding = 2) readonly buffer VertexLayer{
 	vec4 Vertices[];
 };
-layout(std430, binding = 3) readonly buffer IndexLayer{
-	unsigned int Indices[];
+layout(std430, binding = 3) readonly buffer TriangleLayer{
+	uvec4 Triangles[];
+};
+layout(std140, binding = 4) uniform KdTreeBlock{
+	TreeNode nodeList[300];
 };
 
 float seed;
@@ -137,19 +145,14 @@ vec3 Trace(Ray ray){
 				object = 1;
 			}
 		}
-		int vert_offset = 0, idx_offset = 0, hit_offset = 0;
-		for(int c = 0; c < CSdataList.length();c++){
-			for(int j = idx_offset; j<CSdataList[c].numIdx+idx_offset-2;j+=3){
-				const vec3 v0 = vec3(Vertices[Indices[j]+vert_offset]), v1 = vec3(Vertices[Indices[j+1]+vert_offset]), v2 = vec3(Vertices[Indices[j+2]+vert_offset]);
-				float _t = RayIntersectsTriangle(ray,v0,v1,v2);
-				if(_t < t && _t>epsilon){
-					t = _t;
-					id = j; hit_offset = vert_offset;
-					object = 2;
-				}
+		for(int j = 0; j < Triangles.length();j++){
+			const vec4 v0 = Vertices[Triangles[j].x], v1 = Vertices[Triangles[j].y], v2 = Vertices[Triangles[j].z];
+			float _t = RayIntersectsTriangle(ray, vec3(v0), vec3(v1), vec3(v2));
+			if(_t < t && _t > epsilon){
+				t = _t;
+				id = j;
+				object = 2;
 			}
-			vert_offset += CSdataList[c].numVert;
-			idx_offset += CSdataList[c].numIdx;
 		}
 
 		if(id == -1 ) break;
@@ -159,8 +162,8 @@ vec3 Trace(Ray ray){
 		case 0:{ emission = spheres[id].emission; color = spheres[id].color; normal = normalize(hit-spheres[id].pos);type = spheres[id].type;break;}
 		case 1:{ emission = cones[id].emission; color = cones[id].color; 
 				 vec3 cp = hit-cones[id].tip, bn = cross(cones[id].axis, cp); normal = normalize(cross(bn, cp)); type = cones[id].type; break;}
-		case 2:{ const int index = int(Vertices[Indices[id]+hit_offset].w); emission = CSdataList[index].emission; color = CSdataList[index].color; type = CSdataList[index].type;
-				 const vec3 v0 = vec3(Vertices[Indices[id]+hit_offset]), v1 = vec3(Vertices[Indices[id+1]+hit_offset]), v2 = vec3(Vertices[Indices[id+2]+hit_offset]); normal = normalize(cross(v1-v0,v2-v0));break;}
+		case 2:{ const uvec4 tri = Triangles[id]; emission = CSdataList[tri.w].emission; color = CSdataList[tri.w].color; type = CSdataList[tri.w].type;
+				 const vec3 v0 = vec3(Vertices[tri.x]), v1 = vec3(Vertices[tri.y]), v2 = vec3(Vertices[tri.z]); normal = normalize(cross(v1-v0,v2-v0));break;}
 		default:
 			break;
 		}
