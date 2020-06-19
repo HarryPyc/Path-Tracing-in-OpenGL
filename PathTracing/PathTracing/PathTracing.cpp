@@ -11,10 +11,10 @@ void display() {
 	glViewport(0, 0, w, h);
 	Render::getInstance().render();
 	glutSwapBuffers();
+
 }
 void idle() {
 	glutPostRedisplay();
-	
 }
 void keyboard(unsigned char key, int x, int y) {
 	switch(key)

@@ -21,7 +21,7 @@ void Render::init() {
 	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
 	//meshes.push_back(obj2);
 	Mesh* obj2 = new Mesh("asset/model/bunny.obj", glm::vec3(90, 0, 700), Material::Blue());
-	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 0;
+	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 1;
 	obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
 	meshes.push_back(obj2);
 
@@ -29,6 +29,7 @@ void Render::init() {
 	vertexProcess();
 	tree->ConstructKdTree();
 	uploadTree();
+
 }
 void Render::render() {
 	Samples++;
@@ -38,8 +39,8 @@ void Render::render() {
 	glBindImageTexture(0, result->texture_id, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 	cam->upload(compute_shader);
 	glUniform1i(glGetUniformLocation(compute_shader, "Samples"), Samples);
-	glDispatchCompute(40, 30, 1);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glDispatchCompute(50, 50, 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	//render result image
 	glUseProgram(quad_shader);
 	result->activate(quad_shader, 0);

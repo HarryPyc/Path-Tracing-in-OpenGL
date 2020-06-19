@@ -12,30 +12,38 @@ void KdTree::ConstructKdTree()
 		temp.push_back(Triangles[triangleList[i].index]);
 	}
 	Triangles = temp;
+	for (int i = 0; i < nodeList.size(); i++) {
+		if (nodeList[i].left != -1) {
+			nodeList[nodeList[i].left].parent = i;
+		}
+		if (nodeList[i].right != -1) {
+			nodeList[nodeList[i].right].parent = i;
+		}
+	}
 }
 
 bool compX(const Triangle& t0, const Triangle& t1), compY(const Triangle& t0, const Triangle& t1), compZ(const Triangle& t0, const Triangle& t1);
 void KdTree::helper(TreeNode &root, iter begin, iter end)
 {
-	//sort triangles in split axis
 	glm::vec3 diag = root.maxBb - root.minBb;
 	root.axis = diag.x > diag.y && diag.x > diag.z ? 0 : (diag.y > diag.z ? 1 : 2);
-	glm::vec3 split = root.maxBb;
+	//sort triangles in split axis
+	switch (root.axis)
+	{
+	case 0: sort(begin, end, compX);  break;
+	case 1: sort(begin, end, compY);  break;
+	case 2: sort(begin, end, compZ);  break;
+	}
 	root.firstTriangle = begin - triangleList.begin();
 	root.triangleCount = end - begin;
 	if (root.triangleCount <= MAX_TRIANGLE_IN_LEAF) {
 		root.isLeaf = true;
 		return;
 	}
-	iter midIt = begin + (end-begin) / 2;
-	switch (root.axis)
-	{
-	case 0: sort(begin, end, compX); split.x = midIt->center.x+1.f; break;
-	case 1: sort(begin, end, compY); split.y = midIt->center.y+1.f; break;
-	case 2: sort(begin, end, compZ); split.z = midIt->center.z+1.f; break;
-	}
-
-
+	iter midIt = begin + (end - begin) / 2;
+	glm::vec3 split = root.maxBb;
+	split[root.axis] = midIt->center[root.axis];
+	root.val = split[root.axis];
 	//for (iter it = begin; it < end; it++) {
 	//	if (glm::all(glm::lessThanEqual(it->center, split)))
 	//		midIt++;

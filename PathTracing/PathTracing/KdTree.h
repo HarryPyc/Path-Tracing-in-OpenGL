@@ -7,9 +7,10 @@ using namespace std;
 const int MAX_TRIANGLE_IN_LEAF = 64;
 
 struct TreeNode {
-	unsigned int axis; bool isLeaf = false; int firstTriangle = -1, triangleCount = 0;
+	unsigned int axis; int firstTriangle = -1, triangleCount = 0; int isLeaf = 0;
 	glm::vec3 minBb; int left = -1;
 	glm::vec3 maxBb; int right = -1;
+	int parent = -1; float val; int PADDING1, PADDING2;
 	TreeNode(glm::vec3 _minBb, glm::vec3 _maxBb)
 		: minBb(_minBb), maxBb(_maxBb) {};
 };
