@@ -4,15 +4,12 @@
 #include <algorithm>
 using namespace std;
 
-const int MAX_TRIANGLE_IN_LEAF = 64;
+const int MAX_TRIANGLE_IN_LEAF = 64, MAX_DEPTH = 8;
 
 struct TreeNode {
-	unsigned int axis; int firstTriangle = -1, triangleCount = 0; int isLeaf = 0;
-	glm::vec3 minBb; int left = -1;
-	glm::vec3 maxBb; int right = -1;
-	int parent = -1; float val; int PADDING1, PADDING2;
-	TreeNode(glm::vec3 _minBb, glm::vec3 _maxBb)
-		: minBb(_minBb), maxBb(_maxBb) {};
+	unsigned int axis; int firstTriangle = 0, triangleCount = 0; int isLeaf = 0;
+	int left = -1; int right = -1;
+	float val,  PADDING;
 };
 struct Triangle {
 	int index;
@@ -30,6 +27,6 @@ public:
 
 	void ConstructKdTree();
 private:
-	void helper(TreeNode &root, iter begin, iter end);
+	void helper(TreeNode &root, iter begin, iter end, glm::vec3 minBb, glm::vec3 maxBb, int depth);
 	void CalculateCenter();
 };

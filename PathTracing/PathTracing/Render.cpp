@@ -6,29 +6,33 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
-	cam = new Camera(glm::vec3(200, 150, 1100), glm::vec3(200,150,600), glm::vec3(0, 1, 0));
+	cam = new Camera(glm::vec3(0, 10, 50), glm::vec3(0), glm::vec3(0, 1, 0));
 	tree = new KdTree();
 	//uploadThermalData(compute_shader, 0);
 
 	Samples = 0; nu = 0; isRight = true;
 
-	Mesh* cube = new Mesh("asset/model/cube.obj", glm::vec3(200,50,500), Material::Orange());
-	cube->transform->Scale(glm::vec3(50)); cube->material->mode = 1;
-	cube->transform->Rotate(30, glm::vec3(0, 1, 0));
-	meshes.push_back(cube);
+	Mesh* obj1 = new Mesh("asset/model/mug.obj", glm::vec3(10,0,0), Material::Orange());
+	obj1->transform->Scale(glm::vec3(10)); //obj1->transform->Rotate(30, glm::vec3(0, 1, 0));
+	obj1->material->mode = 1; //obj1->material->emission = glm::vec3(0.7);
+	obj1->texture = new Texture2D("mug_normal", "asset/texture/mug_normal.jpg");
+	obj1->texture->activate(compute_shader, 0);
+	meshes.push_back(obj1);
 	//Mesh* obj2 = new Mesh("asset/model/cube.obj", glm::vec3(70, 40, 700), Material::Blue());
 	//obj2->transform->Scale(glm::vec3(40)); obj2->material->mode = 0;
 	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
 	//meshes.push_back(obj2);
-	Mesh* obj2 = new Mesh("asset/model/bunny.obj", glm::vec3(90, 0, 700), Material::Blue());
-	obj2->transform->Scale(glm::vec3(800)); obj2->material->mode = 1;
-	obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
+	Mesh* obj2 = new Mesh("asset/model/table.obj", glm::vec3(0), Material::White());
+	obj2->transform->Scale(glm::vec3(10)); //obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
+	obj2->material->mode = 1; //obj2->material->emission = glm::vec3(0.2);
+	obj2->texture = new Texture2D("table", "asset/texture/table_ambient.jpg");
+	obj2->texture->activate(compute_shader, 1);
 	meshes.push_back(obj2);
 
 	initSSBO();
 	vertexProcess();
-	tree->ConstructKdTree();
-	uploadTree();
+	//tree->ConstructKdTree();
+	//uploadTree();
 
 }
 void Render::render() {
@@ -70,22 +74,31 @@ Render& Render::getInstance() {
 void Render::initSSBO()
 {
 	for (int i = 0; i < meshes.size(); i++) {
-		meshes[i]->initCSData(CSdataList, tree->Vertices, tree->Triangles, i);
+		meshes[i]->initCSData(CSdataList, tree->Vertices, tree->Triangles, tex_coords, i);
 	}
 	glGenBuffers(1, &ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(CSMeshData) * CSdataList.size(), &CSdataList[0], GL_DYNAMIC_COPY);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	glGenBuffers(1, &Vssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Vssbo);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * tree->Vertices.size(), &tree->Vertices[0], GL_DYNAMIC_COPY);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Vssbo);
+
 	glGenBuffers(1, &Issbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Issbo);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::uvec4)* tree->Triangles.size(), &tree->Triangles[0], GL_DYNAMIC_COPY);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Issbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glGenBuffers(1, &tex_ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, tex_ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec2) * tex_coords.size(), &tex_coords[0], GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, tex_ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 }
 void Render::vertexProcess()
 {

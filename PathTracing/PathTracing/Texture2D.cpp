@@ -1,4 +1,5 @@
 #include "Texture2D.h"
+#include "LoadTexture.h"
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
 //#include <stb_image_write.h>
 Texture2D::Texture2D(const std::string name, int w, int h, GLenum magFilter, GLenum minFilter, GLint internalFormat, GLint type, GLint wrap)
@@ -16,6 +17,16 @@ Texture2D::Texture2D(const std::string name, int w, int h, GLenum magFilter, GLe
     width = w;
     height = h;
     texture_name = name;
+}
+Texture2D::Texture2D(const std::string name, const std::string path)
+{
+    texture_id = LoadTexture(path.c_str());
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    texture_name = name;
+
 }
 void Texture2D::activate(GLuint program, GLuint textureLoc)
 {

@@ -4,28 +4,27 @@
 void KdTree::ConstructKdTree()
 {
 	CalculateCenter();
-	TreeNode root(glm::vec3(0), glm::vec3(300, 300, 1200));
-	helper(root, triangleList.begin(), triangleList.end());
-	nodeList.push_back(root);
+	TreeNode root;
+	helper(root, triangleList.begin(), triangleList.end(), glm::vec3(0), glm::vec3(300), 0);
+	nodeList.insert(nodeList.begin(), root);
 	vector<glm::uvec4> temp;
 	for (int i = 0; i < triangleList.size(); i++) {
 		temp.push_back(Triangles[triangleList[i].index]);
 	}
 	Triangles = temp;
-	for (int i = 0; i < nodeList.size(); i++) {
-		if (nodeList[i].left != -1) {
-			nodeList[nodeList[i].left].parent = i;
-		}
-		if (nodeList[i].right != -1) {
-			nodeList[nodeList[i].right].parent = i;
-		}
-	}
 }
 
 bool compX(const Triangle& t0, const Triangle& t1), compY(const Triangle& t0, const Triangle& t1), compZ(const Triangle& t0, const Triangle& t1);
-void KdTree::helper(TreeNode &root, iter begin, iter end)
+void KdTree::helper(TreeNode &root, iter begin, iter end, glm::vec3 minBb, glm::vec3 maxBb, int depth)
 {
-	glm::vec3 diag = root.maxBb - root.minBb;
+	root.firstTriangle = begin - triangleList.begin();
+	root.triangleCount = end - begin;
+	if (root.triangleCount <= MAX_TRIANGLE_IN_LEAF || ++depth > MAX_DEPTH) {
+		root.isLeaf = true;
+		return;
+	}
+
+	glm::vec3 diag = maxBb - minBb;
 	root.axis = diag.x > diag.y && diag.x > diag.z ? 0 : (diag.y > diag.z ? 1 : 2);
 	//sort triangles in split axis
 	switch (root.axis)
@@ -34,31 +33,28 @@ void KdTree::helper(TreeNode &root, iter begin, iter end)
 	case 1: sort(begin, end, compY);  break;
 	case 2: sort(begin, end, compZ);  break;
 	}
-	root.firstTriangle = begin - triangleList.begin();
-	root.triangleCount = end - begin;
-	if (root.triangleCount <= MAX_TRIANGLE_IN_LEAF) {
-		root.isLeaf = true;
-		return;
-	}
-	iter midIt = begin + (end - begin) / 2;
-	glm::vec3 split = root.maxBb;
-	split[root.axis] = midIt->center[root.axis];
+	diag[root.axis] /= 2.f;
+	glm::vec3 split = minBb + diag;
 	root.val = split[root.axis];
-	//for (iter it = begin; it < end; it++) {
-	//	if (glm::all(glm::lessThanEqual(it->center, split)))
-	//		midIt++;
-	//}
 
-	if (midIt != begin) {
-		TreeNode left(root.minBb, split);
-		helper(left, begin, midIt);
-		nodeList.push_back(left); root.left = nodeList.size() - 1;
+	iter midIt = begin;
+	for (iter it = begin; it < end; it++) {
+		if (it->center[root.axis] < root.val)
+			midIt++;
+		else
+			break;
 	}
-	if (midIt != end) {
-		TreeNode right(split, root.maxBb);
-		helper(right, midIt, end);
-		nodeList.push_back(right); root.right = nodeList.size() - 1;
-	}
+
+	
+	TreeNode left;
+	helper(left, begin, midIt, minBb, split, depth);
+	nodeList.push_back(left); root.left = nodeList.size() ;
+	
+
+	TreeNode right;
+	helper(right, midIt, end, split, maxBb, depth);
+	nodeList.push_back(right); root.right = nodeList.size() ;
+	
 }
 
 void KdTree::CalculateCenter()

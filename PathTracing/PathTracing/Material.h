@@ -37,7 +37,7 @@ public:
 	}
 
 	static Material* White() {
-		return new Material(glm::vec3(1, 1, 1));
+		return new Material(glm::vec3(0.75));
 	}
 	
 	static Material* Orange() {

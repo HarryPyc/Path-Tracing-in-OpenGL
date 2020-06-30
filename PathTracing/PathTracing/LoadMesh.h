@@ -31,6 +31,7 @@ struct MeshData
    aiVector3D mBbMin, mBbMax;
    std::vector<glm::vec3> vertices;
    std::vector<unsigned int> indices;
+   std::vector<glm::vec2> tex_coords;
 
    std::vector<SubmeshData> mSubmesh;
    std::string mFilename;

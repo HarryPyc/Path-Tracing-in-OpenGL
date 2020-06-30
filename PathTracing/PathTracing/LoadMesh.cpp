@@ -229,16 +229,18 @@ void BufferIndexedVerts(MeshData& meshdata)
       for (int m = 0; m<numSubmeshes; m++)
       {
          aiMesh* mesh = meshdata.mScene->mMeshes[m];
-         std::vector<float> tex_coords(2 * mesh->mNumVertices);
+         std::vector<float> texture_coords(2 * mesh->mNumVertices);
          if (mesh->HasTextureCoords(0))
          {
             for (unsigned int k = 0; k < mesh->mNumVertices; ++k)
             {
-               tex_coords[k * 2] = mesh->mTextureCoords[0][k].x;
-               tex_coords[k * 2 + 1] = mesh->mTextureCoords[0][k].y;
+               texture_coords[k * 2] = mesh->mTextureCoords[0][k].x;
+               texture_coords[k * 2 + 1] = mesh->mTextureCoords[0][k].y;
+               glm::vec2 uv(texture_coords[k * 2], texture_coords[k * 2 + 1]);
+               meshdata.tex_coords.push_back(uv);
             }
             const int size = 2 * sizeof(float)*mesh->mNumVertices;
-            const void* data = tex_coords.data();
+            const void* data = texture_coords.data();
             glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
             offset += size;
          }

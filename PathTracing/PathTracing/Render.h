@@ -20,13 +20,14 @@ public:
 	static Render& getInstance();
 
 private:
-	GLuint quad_vao, ubo, Vssbo, Issbo,TreeUBO;
+	GLuint quad_vao, ubo, Vssbo, Issbo,tex_ssbo, TreeUBO;
 	GLuint quad_shader, compute_shader;
 	int nu;
 	bool isRight;
 
 	vector<Mesh*> meshes;
 	vector<CSMeshData> CSdataList;
+	vector<glm::vec2> tex_coords;
 	KdTree* tree;
 	
 	void initSSBO();

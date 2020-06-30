@@ -46,7 +46,7 @@ void Mesh::draw() {
 	}
 }
 
-void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices, vector<glm::uvec4>& triangles, int index) {
+void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices, vector<glm::uvec4>& triangles, vector<glm::vec2>& tex_coords, int index) {
 	CSMeshData CSdata;
 	CSdata.color = material->color;
 	CSdata.emission = material->emission;
@@ -60,6 +60,7 @@ void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices,
 			glm::uvec4 tri = glm::uvec4(meshdata.indices[i], meshdata.indices[i + 1], meshdata.indices[i + 2], index);
 			triangles.push_back(tri);
 		}
+		tex_coords.insert(tex_coords.begin(), meshdata.tex_coords.begin(), meshdata.tex_coords.end());
 		CSdata.numVert = meshdata.vertices.size();
 		CSdata.numIdx = meshdata.indices.size();
 	}
