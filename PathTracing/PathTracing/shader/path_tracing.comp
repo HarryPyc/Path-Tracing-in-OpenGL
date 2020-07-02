@@ -8,11 +8,13 @@ uniform vec3 ray01;
 uniform vec3 ray10;
 uniform vec3 ray11;
 uniform vec3 camPos;
-uniform float Intensity[9];
-uniform float Reflectivity[9];
+uniform float Intensity[2];
+uniform float Reflectivity[2];
 
 uniform sampler2D mug_normal;
 uniform sampler2D table;
+
+
 
 const int SPECULAR = 0, DIFFUSE = 1, REFRACTION = 2, GLOSSY = 3;
 const int MAX_BOUNCE = 4, TREE_SIZE = 512;
@@ -212,13 +214,13 @@ float rand(vec2 co){
 //};
 //
 vec3 Trace(Ray ray){
-	vec3[MAX_BOUNCE*2] emits, colors;
+	vec3[2*MAX_BOUNCE] emits, colors;
 
 	int i;  int object; //sphere0, cone1
 	//We cannot do recursion in shader, so I use for loop instead
-	for(i = 0; i < MAX_BOUNCE*2;i++){
+	for(i = 0; i < 2;i++){
 		//Detect intersection
-		Hit.t = inf, Hit.id = -1;
+		Hit.t = inf; Hit.id = -1; Hit.u = 0; Hit.v = 0;
 
 //		for(int j = 0; j<spheres.length();j++){
 //			float _t = spheres[j].intersect(ray);//small offset avoids self-intersection
@@ -258,7 +260,7 @@ vec3 Trace(Ray ray){
 //			}
 //		}
 		/*---------------------------*/
-		if(Hit.id == -1 ){ emits[i] = vec3(0.4,0.4,0.6);break;}
+		if(Hit.id == -1 ){ emits[i] = vec3(Intensity[1]);break;}
 		Hit.t-=0.05;if(Hit.t<epsilon)break;
 		vec3 emission,color,normal, hit = ray.origin + ray.dir*Hit.t; int type;
 //		switch(object){
@@ -272,16 +274,20 @@ vec3 Trace(Ray ray){
 //		}
 		const uvec4 tri = Triangles[Hit.id]; type = CSdataList[tri.w].type;
 		const vec3 v0 = vec3(Vertices[tri.x]), v1 = vec3(Vertices[tri.y]), v2 = vec3(Vertices[tri.z]); 
-		vec2 uv = Hit.u*tex_coords[tri.x]+Hit.v*tex_coords[tri.y]+(1-Hit.u-Hit.v)*tex_coords[tri.z];
+		vec2 uv = (1-Hit.u-Hit.v)*tex_coords[tri.x]+Hit.u*tex_coords[tri.y]+Hit.v*tex_coords[tri.z];
 		if(tri.w == 0){
 			emission = CSdataList[tri.w].emission; color = CSdataList[tri.w].color; 
-			//normal = vec3(texture2D(mug_normal,uv));
-			normal = normalize(cross(v1-v0,v2-v0));
+			//color = vec3(texture2D(mug_normal, uv));
+			normal = normalize(2*vec3(texture2D(mug_normal,uv))-vec3(1));
+			//normal = normalize(cross(v1-v0,v2-v0));
+			
 		}else if(tri.w == 1){
 			normal = normalize(cross(v1-v0,v2-v0));
 			emission = vec3(0); color = vec3(texture2D(table,uv));
 		}
+		emission = vec3(Intensity[tri.w]); color = vec3(Reflectivity[tri.w]);
 
+		
 		//internal reflection/refraction or not
 		vec3 n = dot(normal,ray.dir)>0? -normal:normal;
 		//Russian Roulette Path Termination

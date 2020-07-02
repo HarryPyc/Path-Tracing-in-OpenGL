@@ -30,6 +30,7 @@ Texture2D::Texture2D(const std::string name, const std::string path)
 }
 void Texture2D::activate(GLuint program, GLuint textureLoc)
 {
+    glUseProgram(program);
     glActiveTexture(GL_TEXTURE0 + textureLoc);
     glBindTexture(GL_TEXTURE_2D, texture_id);
     int tex_loc = glGetUniformLocation(program, texture_name.c_str());

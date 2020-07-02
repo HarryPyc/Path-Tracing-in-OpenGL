@@ -6,28 +6,29 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
-	cam = new Camera(glm::vec3(0, 10, 50), glm::vec3(0), glm::vec3(0, 1, 0));
+	cam = new Camera(glm::vec3(150, 150, 1100), glm::vec3(150,150,0), glm::vec3(0, 1, 0));
 	tree = new KdTree();
-	//uploadThermalData(compute_shader, 0);
+	uploadThermalData(compute_shader, 0);
 
 	Samples = 0; nu = 0; isRight = true;
 
-	Mesh* obj1 = new Mesh("asset/model/mug.obj", glm::vec3(10,0,0), Material::Orange());
-	obj1->transform->Scale(glm::vec3(10)); //obj1->transform->Rotate(30, glm::vec3(0, 1, 0));
+	Mesh* obj1 = new Mesh("asset/model/mug.obj", glm::vec3(150,0,500), Material::Orange());
+	obj1->transform->Scale(glm::vec3(100)); //obj1->transform->Rotate(30, glm::vec3(0, 1, 0));
 	obj1->material->mode = 1; //obj1->material->emission = glm::vec3(0.7);
 	obj1->texture = new Texture2D("mug_normal", "asset/texture/mug_normal.jpg");
-	obj1->texture->activate(compute_shader, 0);
 	meshes.push_back(obj1);
 	//Mesh* obj2 = new Mesh("asset/model/cube.obj", glm::vec3(70, 40, 700), Material::Blue());
 	//obj2->transform->Scale(glm::vec3(40)); obj2->material->mode = 0;
 	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
 	//meshes.push_back(obj2);
-	Mesh* obj2 = new Mesh("asset/model/table.obj", glm::vec3(0), Material::White());
-	obj2->transform->Scale(glm::vec3(10)); //obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
+	Mesh* obj2 = new Mesh("asset/model/table.obj", glm::vec3(150,0,500), Material::White());
+	obj2->transform->Scale(glm::vec3(100)); //obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
 	obj2->material->mode = 1; //obj2->material->emission = glm::vec3(0.2);
 	obj2->texture = new Texture2D("table", "asset/texture/table_ambient.jpg");
-	obj2->texture->activate(compute_shader, 1);
-	meshes.push_back(obj2);
+	//meshes.push_back(obj2);
+
+	obj1->texture->activate(compute_shader, 1);
+	obj2->texture->activate(compute_shader, 2);
 
 	initSSBO();
 	vertexProcess();
@@ -52,20 +53,17 @@ void Render::render() {
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	//automatically print results
-	/*if (Samples == 8192 && nu <11) {
-		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+(isRight?"Right":"Left")+".txt";
+	if (Samples == 512 && nu <11) {
+		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+".txt";
 		Render::getInstance().result->print(name);
 		result->clear(glm::vec4(0)); Samples = 0;
-		if (isRight) {
-			cam->pos.x = 100;
-		}
-		else if(nu < 10){
+		
+		if(nu < 10){
 			nu++;
-			cam->pos.x = 200;
 			uploadThermalData(compute_shader, nu);
 		}
-		isRight = !isRight;
-	}*/
+		//isRight = !isRight;
+	}
 }
 Render& Render::getInstance() {
 	static Render app;
