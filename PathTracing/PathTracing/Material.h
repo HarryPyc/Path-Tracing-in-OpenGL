@@ -19,7 +19,7 @@ public:
 	Material(
 		glm::vec3 _color = glm::vec3(0.9f), 
 		glm::vec3 _emission = glm::vec3(0),
-		int _mode = 0,
+		int _mode = 1,
 		float _reflectivity = 1.0f);
 
 	void upload(GLuint program);

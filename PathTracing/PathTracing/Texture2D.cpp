@@ -1,7 +1,7 @@
 #include "Texture2D.h"
 #include "LoadTexture.h"
-//#define STB_IMAGE_WRITE_IMPLEMENTATION
-//#include <stb_image_write.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 Texture2D::Texture2D(const std::string name, int w, int h, GLenum magFilter, GLenum minFilter, GLint internalFormat, GLint type, GLint wrap)
 {
     glGenTextures(1, &texture_id);
@@ -47,8 +47,8 @@ void Texture2D::print(std::string name) {
     ofstream outFile(name);
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            outFile << *(pixels+4*(i*width+j));
-            outFile << " ";
+            for(int c = 0; c < 4; c++)
+            outFile << *(pixels+4*(i*width+j)+c)<<" ";
         }
         outFile << "\n";
     }

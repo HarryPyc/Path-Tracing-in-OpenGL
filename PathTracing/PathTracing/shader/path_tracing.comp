@@ -8,11 +8,8 @@ uniform vec3 ray01;
 uniform vec3 ray10;
 uniform vec3 ray11;
 uniform vec3 camPos;
-uniform float Intensity[2];
-uniform float Reflectivity[2];
-
-uniform sampler2D mug_normal;
-uniform sampler2D table;
+uniform float Intensity[4];
+uniform float Reflectivity[4];
 
 
 
@@ -35,7 +32,7 @@ struct TreeNode {
 	float val, PADDING;
 };
 layout(std140, binding = 1) uniform CSMeshBlock{
-	CSMeshData CSdataList[2];
+	CSMeshData CSdataList[4];
 };
 
 layout(std430, binding = 2) readonly buffer VertexLayer{
@@ -47,7 +44,10 @@ layout(std430, binding = 3) readonly buffer TriangleLayer{
 layout(std140, binding = 4) uniform KdTreeBlock{
 	TreeNode nodeList[TREE_SIZE];
 };
-layout(std430, binding = 5) readonly buffer TexCoordLayer{
+layout(std430, binding = 5) readonly buffer NormalLayer{
+	vec4 normals[];
+};
+layout(std430, binding = 6) readonly buffer TexCoordLayer{
 	vec2 tex_coords[];
 };
 
@@ -168,76 +168,25 @@ float rand(vec2 co){
     return fract(sin(seed/Samples*dot(co ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-
-//struct Sphere{
-//	float radius;
-//	vec3 pos, emission, color;
-//	int type;
-//	float intersect(Ray ray){
-//		vec3 op = ray.origin - pos;
-//		float t, b=dot(op, ray.dir), det=b*b-dot(op, op)+radius*radius; //a=1
-//		if (det<=0) return 0; else det=sqrt(det); 
-//		return t = (-b-det)>epsilon? (-b-det) : max((-b+det), 0); 
-//	}
-//};
-//struct Cone{
-//	float theta;
-//	vec3 tip, axis, emission, color;
-//	int type;
-//	float intersect(Ray ray){
-//		vec3 co = ray.origin - tip; float cos2t = cos(radians(theta)); cos2t *= cos2t;
-//		float t, dotDV = dot(ray.dir, axis), dotCOV = dot(co, axis);
-//		float a = dotDV*dotDV - cos2t, b = 2*(dotDV*dotCOV-dot(ray.dir, co)*cos2t),
-//			  c = dotCOV*dotCOV-dot(co,co)*cos2t, delta = b*b-4*a*c;
-//		if(delta<=0) return 0; else delta = sqrt(delta);
-//		t = (-b+delta)/2/a>epsilon?(-b+delta)/2/a:max((-b-delta)/2/a,0);
-//		vec3 hit = ray.origin + t*ray.dir;
-//		if(dot(hit-tip, axis)<=0) return 0;
-//		return t;
-//	}
-//};
-
-//shared Sphere spheres[] = {//Scene: radius, position, emission, color, material 
-//   //Walls and light source
-//   Sphere(1e5, vec3(-1e5, 0, 0),                       vec3(0),        vec3(.75,.25,.25),  DIFFUSE),//Left 
-//   Sphere(1e5, vec3(1e5+room_w, 0, 0),                 vec3(0),        vec3(.25,.25,.75),  DIFFUSE),//Rght 
-//   Sphere(1e5, vec3(0, 0, -1e5),                       vec3(0),        vec3(.25,.75,.25),  DIFFUSE),//Back 
-//   Sphere(1e5, vec3(0, 0, 1e5+room_d),                 vec3(0),        vec3(0.75),         DIFFUSE),//Frnt 
-//   Sphere(1e5, vec3(0,  1e5+room_h, 0),                vec3(0),        vec3(0.75),         DIFFUSE),//Top 
-//   Sphere(1e5, vec3(0, -1e5, 0),                       vec3(0),        vec3(0.75),         DIFFUSE),//Bottom 
-//   Sphere(600, vec3(room_w/2,room_h+600-2,room_d/2),   vec3(4),        vec3(1),            DIFFUSE),//Light 
-//
-//   Sphere(40,  vec3(200,40,700),                       vec3(0),        vec3(.8,.2,.2),     DIFFUSE)            
-//}; 
-// shared Cone cones[] = {
-//	Cone(15, vec3(100, 80, 500), vec3(0,-1,0),         vec3(0), vec3(0.8,.2,.2), DIFFUSE)
-//};
-//
-vec3 Trace(Ray ray){
-	vec3[2*MAX_BOUNCE] emits, colors;
-
-	int i;  int object; //sphere0, cone1
+vec2 GetRsRp(float n1, float n2, float cos_i){
+	cos_i = abs(cos_i);
+	float cos_t = sqrt(1 - (n1*n1)/(n2*n2)*(1-cos_i*cos_i));
+	float Rs = (n1*cos_i-n2*cos_t)/(n1*cos_i+n2*cos_t); Rs = Rs*Rs;
+	float Rp = (n1*cos_t-n2*cos_i)/(n1*cos_t+n2*cos_i); Rp = Rp*Rp;
+	return vec2(Rs, Rp);
+}
+struct PolarInfo{
+	vec3 indir, n, outdir;
+};
+vec4 Trace(Ray ray){
+	vec2[2*MAX_BOUNCE+1] I, R; 
+	PolarInfo polarInfoList[2*MAX_BOUNCE+1];
+	int i;
 	//We cannot do recursion in shader, so I use for loop instead
-	for(i = 0; i < 2;i++){
+	for(i = 0;i<2*MAX_BOUNCE ;i++){
 		//Detect intersection
 		Hit.t = inf; Hit.id = -1; Hit.u = 0; Hit.v = 0;
 
-//		for(int j = 0; j<spheres.length();j++){
-//			float _t = spheres[j].intersect(ray);//small offset avoids self-intersection
-//			if(_t < t && _t > epsilon){
-//				t = _t;
-//				id = j;
-//				object = 0;
-//			}
-//		}
-//		for(int j = 0; j<cones.length();j++){
-//			float _t = cones[j].intersect(ray);//small offset avoids self-intersection
-//			if(_t < t && _t > epsilon){
-//				t = _t;
-//				id = j;
-//				object = 1;
-//			}
-//		}
 		//Brute force
 		for(int j = 0; j < Triangles.length(); j++){
 			const vec4 v0 = Vertices[Triangles[j].x], v1 = Vertices[Triangles[j].y],  v2 = Vertices[Triangles[j].z];
@@ -246,7 +195,6 @@ vec3 Trace(Ray ray){
 			if(_t < Hit.t && _t > epsilon){
 			Hit.t = _t; Hit.u = _u; Hit.v = _v;
 			Hit.id = j;
-			object = 2;
 			}
 		}
 		//search kd tree
@@ -260,44 +208,22 @@ vec3 Trace(Ray ray){
 //			}
 //		}
 		/*---------------------------*/
-		if(Hit.id == -1 ){ emits[i] = vec3(Intensity[1]);break;}
+		if(Hit.id == -1 ){ I[i] = vec2(epsilon); break;}
 		Hit.t-=0.05;if(Hit.t<epsilon)break;
-		vec3 emission,color,normal, hit = ray.origin + ray.dir*Hit.t; int type;
-//		switch(object){
-//		case 0:{ emission = spheres[id].emission; color = spheres[id].color; normal = normalize(hit-spheres[id].pos);type = spheres[id].type;break;}
-//		case 1:{ emission = cones[id].emission; color = cones[id].color; 
-//				 vec3 cp = hit-cones[id].tip, bn = cross(cones[id].axis, cp); normal = normalize(cross(bn, cp)); type = cones[id].type; break;}
-//		case 2:{ const uvec4 tri = Triangles[id]; emission = CSdataList[tri.w].emission; color = CSdataList[tri.w].color; type = CSdataList[tri.w].type;
-//				 const vec3 v0 = vec3(Vertices[tri.x]), v1 = vec3(Vertices[tri.y]), v2 = vec3(Vertices[tri.z]); normal = normalize(cross(v1-v0,v2-v0));break;}
-//		default:
-//			break;
-//		}
+
+		vec3 normal, hit = ray.origin + ray.dir*Hit.t; int type;
+
 		const uvec4 tri = Triangles[Hit.id]; type = CSdataList[tri.w].type;
 		const vec3 v0 = vec3(Vertices[tri.x]), v1 = vec3(Vertices[tri.y]), v2 = vec3(Vertices[tri.z]); 
 		vec2 uv = (1-Hit.u-Hit.v)*tex_coords[tri.x]+Hit.u*tex_coords[tri.y]+Hit.v*tex_coords[tri.z];
-		if(tri.w == 0){
-			emission = CSdataList[tri.w].emission; color = CSdataList[tri.w].color; 
-			//color = vec3(texture2D(mug_normal, uv));
-			normal = normalize(2*vec3(texture2D(mug_normal,uv))-vec3(1));
-			//normal = normalize(cross(v1-v0,v2-v0));
-			
-		}else if(tri.w == 1){
-			normal = normalize(cross(v1-v0,v2-v0));
-			emission = vec3(0); color = vec3(texture2D(table,uv));
-		}
-		emission = vec3(Intensity[tri.w]); color = vec3(Reflectivity[tri.w]);
 
-		
+		vec4 _normal = (1-Hit.u-Hit.v)*normals[tri.x]+Hit.u*normals[tri.y]+Hit.v*normals[tri.z];
+		normal = vec3(normalize(_normal));
+		//normal = normalize(cross(v0-v1,v0-v2));
+
 		//internal reflection/refraction or not
 		vec3 n = dot(normal,ray.dir)>0? -normal:normal;
-		//Russian Roulette Path Termination
-		float p = min(0.95, max(max(color.x, color.y), color.z));
-		if(ray.depth++ >= MAX_BOUNCE)
-			if(abs(rand(ray.seed))>p){
-				emits[i] = emission;
-				colors[i] = vec3(0);
-				break;
-			}
+		vec3 inDir = ray.dir;
 		//Different BRDFs
 		if(type == SPECULAR){
 			ray.dir = reflect(ray.dir,n);
@@ -338,17 +264,44 @@ vec3 Trace(Ray ray){
 			vec3 d = w*cos(2*PI*theta)*u + w*sin(2*PI*theta)*v + sqrt(1-w*w)*r;
 			ray.dir = d;
 		}
-
+		n = normalize(ray.dir-inDir);
 		ray.origin = hit;
 		ray.lastHit = Hit.id;
-		emits[i] = emission;
-		colors[i] = color;
+		R[i] = GetRsRp(1.0f, 1.5f, dot(n, ray.dir));
+		I[i] = vec2(Intensity[tri.w]/2.f);
+		
+		
+		polarInfoList[i] = PolarInfo(inDir, n, ray.dir);
+
+		//Russian Roulette Path Termination
+		float p = min(0.95, max(I[i].x, I[i].y));
+		if(i >= MAX_BOUNCE)
+			if(abs(rand(ray.seed))>p){
+				break;
+			}
 	}
-	vec3 res = vec3(0);
-	for(; i >=0;i--){
-		res = emits[i] + colors[i]*res;
+	//R & I are reflectivity and intensity, i is reflection times plus one
+	vec2 res = vec2(I[i--]); int i_max = i;
+	float I_total = res.x+res.y;vec3 Polar = vec3(1,1,0); vec3 s,p;
+	for(; i >= 0;i--){
+		//PolarInfo{ inDir, normal}
+		vec3 d = polarInfoList[i].outdir;
+		s = normalize(cross(polarInfoList[i].n, d));
+		p = normalize(cross(d,s));
+
+		if(i < i_max)
+			res = I_total*vec2(dot(Polar, s), dot(Polar, p));
+		res = I[i]*(1-R[i]) + R[i]*res;
+		I_total = res.x+res.y;
+
+		p = normalize(cross(polarInfoList[i].indir,s));
+		vec2 n_res = sqrt(res/I_total);
+		Polar = n_res.x * s + n_res.y * p;
 	}
-	return res;
+	
+	float x = Polar.x, y = Polar.y;
+	return I_total*vec4(x*x);
+	//return I_total*vec4(x*x,y*y,(x+y)*(x+y)/2.f,(x-y)*(x-y)/2.f);
 }
 void main(void)
 {
@@ -357,14 +310,15 @@ void main(void)
 	if(pixel.x>=size.x || pixel.y>=size.y)
 		return;
 	//start ray tracing
-	vec3 color;
+
 	vec2 pos = vec2(pixel)/vec2(size);
 	pos += vec2(rand(pixel), rand(pixel))*2e-3;//MSAA
 	vec3 dir = mix(mix(ray00,ray10,pos.x), mix(ray01,ray11,pos.x), pos.y);
-	color = Trace(Ray(camPos, normalize(dir), 0 , -1 ,pixel));
+	
+	vec4 color = Trace(Ray(camPos, normalize(dir), 0 , -1 ,pixel));
 
 	pixel.y = size.y - pixel.y - 1;
-	color += vec3(imageLoad(result, pixel))*(Samples-1);
+	color += imageLoad(result, pixel)*(Samples-1);
 	barrier();
-	imageStore(result, pixel, vec4(color/Samples,1));
+	imageStore(result, pixel, color/Samples);
 }

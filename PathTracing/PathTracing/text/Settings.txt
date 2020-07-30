@@ -1,0 +1,4 @@
+bulb_glass: glossy color(0.6) normalmap
+bulb_bottle: glossy color(.722,.451,.2) 
+
+Camera: pos(0,2,4) target(0,1.5,0)

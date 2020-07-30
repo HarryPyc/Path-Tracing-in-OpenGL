@@ -14,7 +14,7 @@ Mesh::Mesh(const std::string name, glm::vec3 pos, Material* mat, Texture2D* tex)
 {
 	meshdata = LoadMesh(name);
 	vao = meshdata.mVao;
-	transform = new Transform(pos, glm::vec3(meshdata.mScaleFactor));
+	transform = new Transform(pos);
 }
 
 void Mesh::uploadTransformMatrix(GLuint program)
@@ -46,7 +46,7 @@ void Mesh::draw() {
 	}
 }
 
-void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices, vector<glm::uvec4>& triangles, vector<glm::vec2>& tex_coords, int index) {
+void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices, vector<glm::uvec4>& triangles, vector<glm::vec2>& tex_coords, vector<glm::vec4>& normals, int index) {
 	CSMeshData CSdata;
 	CSdata.color = material->color;
 	CSdata.emission = material->emission;
@@ -61,6 +61,7 @@ void Mesh::initCSData(vector<CSMeshData>&CSDataList, vector<glm::vec4>&vertices,
 			triangles.push_back(tri);
 		}
 		tex_coords.insert(tex_coords.end(), meshdata.tex_coords.begin(), meshdata.tex_coords.end());
+		normals.insert(normals.end(), meshdata.normals.begin(), meshdata.normals.end());
 		CSdata.numVert = meshdata.vertices.size();
 		CSdata.numIdx = meshdata.indices.size();
 	}

@@ -267,6 +267,8 @@ void BufferIndexedVerts(MeshData& meshdata)
                normals[k * 3] = mesh->mNormals[k].x;
                normals[k * 3 + 1] = mesh->mNormals[k].y;
                normals[k * 3 + 2] = mesh->mNormals[k].z;
+               auto n = mesh->mNormals[k];
+               meshdata.normals.push_back(glm::vec4(n.x,n.y,n.z,0.f));
             }
          }
          const int size = 3 * sizeof(float)*mesh->mNumVertices;

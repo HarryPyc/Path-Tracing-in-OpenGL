@@ -6,29 +6,18 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
-	cam = new Camera(glm::vec3(150, 150, 1100), glm::vec3(150,150,0), glm::vec3(0, 1, 0));
+	cam = new Camera(glm::vec3(0,0,10), glm::vec3(0,0,0), glm::vec3(0, 1, 0));
 	tree = new KdTree();
 	uploadThermalData(compute_shader, 0);
 
 	Samples = 0; nu = 0; isRight = true;
 
-	Mesh* obj1 = new Mesh("asset/model/mug.obj", glm::vec3(150,0,500), Material::Orange());
-	obj1->transform->Scale(glm::vec3(100)); //obj1->transform->Rotate(30, glm::vec3(0, 1, 0));
-	obj1->material->mode = 1; //obj1->material->emission = glm::vec3(0.7);
-	obj1->texture = new Texture2D("mug_normal", "asset/texture/mug_normal.jpg");
-	meshes.push_back(obj1);
-	//Mesh* obj2 = new Mesh("asset/model/cube.obj", glm::vec3(70, 40, 700), Material::Blue());
-	//obj2->transform->Scale(glm::vec3(40)); obj2->material->mode = 0;
-	//obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
-	//meshes.push_back(obj2);
-	Mesh* obj2 = new Mesh("asset/model/table.obj", glm::vec3(150,0,500), Material::White());
-	obj2->transform->Scale(glm::vec3(100)); //obj2->transform->Rotate(60, glm::vec3(0, 1, 0));
-	obj2->material->mode = 1; //obj2->material->emission = glm::vec3(0.2);
-	obj2->texture = new Texture2D("table", "asset/texture/table_ambient.jpg");
-	//meshes.push_back(obj2);
+	Mesh* sphere = new Mesh("asset/model/sphere.obj"); 
+	sphere->transform->Translate(glm::vec3(0,-0.5,0));
+	sphere->material->mode = 0;
+	meshes.push_back(sphere);
+	
 
-	obj1->texture->activate(compute_shader, 1);
-	obj2->texture->activate(compute_shader, 2);
 
 	initSSBO();
 	vertexProcess();
@@ -52,18 +41,19 @@ void Render::render() {
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+	
 	//automatically print results
-	if (Samples == 512 && nu <11) {
-		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+".txt";
-		Render::getInstance().result->print(name);
-		result->clear(glm::vec4(0)); Samples = 0;
-		
-		if(nu < 10){
-			nu++;
-			uploadThermalData(compute_shader, nu);
-		}
-		//isRight = !isRight;
-	}
+	//if (Samples == 512 && nu <11) {
+	//	std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+".txt";
+	//	Render::getInstance().result->print(name);
+	//	result->clear(glm::vec4(0)); Samples = 0;
+	//	
+	//	if(nu < 10){
+	//		nu++;
+	//		uploadThermalData(compute_shader, nu);
+	//	}
+	//	//isRight = !isRight;
+	//}
 }
 Render& Render::getInstance() {
 	static Render app;
@@ -72,7 +62,7 @@ Render& Render::getInstance() {
 void Render::initSSBO()
 {
 	for (int i = 0; i < meshes.size(); i++) {
-		meshes[i]->initCSData(CSdataList, tree->Vertices, tree->Triangles, tex_coords, i);
+		meshes[i]->initCSData(CSdataList, tree->Vertices, tree->Triangles, tex_coords, normals, i);
 	}
 	glGenBuffers(1, &ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
@@ -91,18 +81,23 @@ void Render::initSSBO()
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Issbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
+	glGenBuffers(1, &normal_ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, normal_ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * normals.size(), &normals[0], GL_DYNAMIC_COPY);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, normal_ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 	glGenBuffers(1, &tex_ssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, tex_ssbo);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec2) * tex_coords.size(), &tex_coords[0], GL_DYNAMIC_COPY);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, tex_ssbo);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, tex_ssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
 }
 void Render::vertexProcess()
 {
 	GLuint vpProgram = InitShader(vertex_process_shader.c_str());
 	glUseProgram(vpProgram);
-	glDispatchCompute(50, 1, 1);
+	glDispatchCompute(100, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glUseProgram(0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, Vssbo);
