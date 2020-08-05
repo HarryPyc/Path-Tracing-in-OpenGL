@@ -43,17 +43,17 @@ void Render::render() {
 
 	
 	//automatically print results
-	//if (Samples == 512 && nu <11) {
-	//	std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+".txt";
-	//	Render::getInstance().result->print(name);
-	//	result->clear(glm::vec4(0)); Samples = 0;
-	//	
-	//	if(nu < 10){
-	//		nu++;
-	//		uploadThermalData(compute_shader, nu);
-	//	}
-	//	//isRight = !isRight;
-	//}
+	if (Samples == 512 && nu <11) {
+		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+".txt";
+		Render::getInstance().result->print(name);
+		result->clear(glm::vec4(0)); Samples = 0;
+		
+		if(nu < 10){
+			nu++;
+			uploadThermalData(compute_shader, nu);
+		}
+		//isRight = !isRight;
+	}
 }
 Render& Render::getInstance() {
 	static Render app;

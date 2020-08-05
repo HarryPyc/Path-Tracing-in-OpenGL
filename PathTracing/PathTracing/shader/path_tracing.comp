@@ -276,32 +276,35 @@ vec4 Trace(Ray ray){
 		//Russian Roulette Path Termination
 		float p = min(0.95, max(I[i].x, I[i].y));
 		if(i >= MAX_BOUNCE)
-			if(abs(rand(ray.seed))>p){
+			if(rand(ray.seed)>p){
 				break;
 			}
 	}
 	//R & I are reflectivity and intensity, i is reflection times plus one
 	vec2 res = vec2(I[i--]); int i_max = i;
-	float I_total = res.x+res.y;vec3 Polar = vec3(1,1,0); vec3 s,p;
+	float I_total = res.x+res.y;vec3 Polar = normalize(vec3(rand(ray.seed),rand(ray.seed),rand(ray.seed))-0.5); vec3 s,p;
 	for(; i >= 0;i--){
 		//PolarInfo{ inDir, normal}
 		vec3 d = polarInfoList[i].outdir;
 		s = normalize(cross(polarInfoList[i].n, d));
 		p = normalize(cross(d,s));
 
-		if(i < i_max)
-			res = I_total*vec2(dot(Polar, s), dot(Polar, p));
+		
+		float a = dot(Polar,s), b = dot(Polar, p);
+		vec2 sign_res = sign(vec2(a,b));
+		res = I_total*pow(vec2(a,b),vec2(2));
+
 		res = I[i]*(1-R[i]) + R[i]*res;
 		I_total = res.x+res.y;
-
 		p = normalize(cross(polarInfoList[i].indir,s));
-		vec2 n_res = sqrt(res/I_total);
+		vec2 n_res = sqrt(res/I_total)*sign_res;
+	
 		Polar = n_res.x * s + n_res.y * p;
 	}
 	
 	float x = Polar.x, y = Polar.y;
-	return I_total*vec4(x*x);
-	//return I_total*vec4(x*x,y*y,(x+y)*(x+y)/2.f,(x-y)*(x-y)/2.f);
+	//return I_total*vec4(x*x);
+	return I_total*vec4(x*x,y*y,(x+y)*(x+y)/2.f,(x-y)*(x-y)/2.f);
 }
 void main(void)
 {
