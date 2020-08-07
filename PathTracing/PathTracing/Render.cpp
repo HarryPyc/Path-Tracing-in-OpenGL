@@ -12,12 +12,13 @@ void Render::init() {
 
 	Samples = 0; nu = 0; isRight = true;
 
-	Mesh* sphere = new Mesh("asset/model/sphere.obj"); 
-	sphere->transform->Translate(glm::vec3(0,-0.5,0));
-	sphere->material->mode = 0;
-	meshes.push_back(sphere);
+	Mesh* obj1 = new Mesh("asset/model/sphere.obj"); 
+	obj1->transform->Translate(glm::vec3(0,-0.5,0));
+	//obj1->texture = new Texture2D("oldman_temp", "asset/model/oldman_tex.jpg");
+	obj1->material->mode = 1;
+	meshes.push_back(obj1);
 	
-
+	//obj1->texture->activate(compute_shader, 1);
 
 	initSSBO();
 	vertexProcess();
@@ -43,7 +44,7 @@ void Render::render() {
 
 	
 	//automatically print results
-	if (Samples == 512 && nu <11) {
+	if (Samples == 8096 && nu <11) {
 		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+".txt";
 		Render::getInstance().result->print(name);
 		result->clear(glm::vec4(0)); Samples = 0;

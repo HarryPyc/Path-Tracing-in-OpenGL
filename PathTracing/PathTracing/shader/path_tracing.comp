@@ -11,13 +11,13 @@ uniform vec3 camPos;
 uniform float Intensity[4];
 uniform float Reflectivity[4];
 
-
+uniform sampler2D oldman_temp;
 
 const int SPECULAR = 0, DIFFUSE = 1, REFRACTION = 2, GLOSSY = 3;
 const int MAX_BOUNCE = 4, TREE_SIZE = 512;
 const float room_w = 300, room_h = 300, room_d = 1200;
 
-const float epsilon = 1e-4, inf = 1e6, PI = 3.1415926, glossiness = 0.6;
+const float epsilon = 1e-4, inf = 1e6, PI = 3.141592653589793238463, glossiness = 0.5;
 struct CSMeshData{
 	vec3 color;
 	int type;
@@ -162,24 +162,35 @@ void search_tree(Ray ray, TreeNode node, float tMin, float tMax){
 	}
 }
 
-float seed;
+shared float seed;
 float rand(vec2 co){
 	seed++;
     return fract(sin(seed/Samples*dot(co ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec2 GetRsRp(float n1, float n2, float cos_i){
+vec4 GetRsRp(float n1, float n2, float cos_i){
 	cos_i = abs(cos_i);
 	float cos_t = sqrt(1 - (n1*n1)/(n2*n2)*(1-cos_i*cos_i));
-	float Rs = (n1*cos_i-n2*cos_t)/(n1*cos_i+n2*cos_t); Rs = Rs*Rs;
-	float Rp = (n1*cos_t-n2*cos_i)/(n1*cos_t+n2*cos_i); Rp = Rp*Rp;
-	return vec2(Rs, Rp);
+	float rs = (n1*cos_i-n2*cos_t)/(n1*cos_i+n2*cos_t); 
+	float rp = (n1*cos_t-n2*cos_i)/(n1*cos_t+n2*cos_i); 
+	float ts = 2*n2*cos_t/(n2*cos_t+n1*cos_i); 
+	float tp = 2*n2*cos_t/(n2*cos_i+n1*cos_t);
+	return vec4(rs,rp,ts,tp);
+}
+int randsign(vec2 _seed){
+	return rand(_seed)>0.5?1:-1;
+}
+float GetFaceBBp(vec2 coord){
+	const double c = 299792458, k = 138064852e-31, h = 2 * PI * 105457180e-42,
+		v = 7.8576538e+02; //first wave length
+	const float T = mix(10,37,texture2D(oldman_temp, coord).x)+273.15;
+	return float(2e8 * (h * c * c * v * v * v) / (exp(float(100 * h * c * v / k / T)) - 1));
 }
 struct PolarInfo{
 	vec3 indir, n, outdir;
 };
 vec4 Trace(Ray ray){
-	vec2[2*MAX_BOUNCE+1] I, R; 
+	vec2[2*MAX_BOUNCE+1] E,R,T; 
 	PolarInfo polarInfoList[2*MAX_BOUNCE+1];
 	int i;
 	//We cannot do recursion in shader, so I use for loop instead
@@ -208,7 +219,7 @@ vec4 Trace(Ray ray){
 //			}
 //		}
 		/*---------------------------*/
-		if(Hit.id == -1 ){ I[i] = vec2(epsilon); break;}
+		if(Hit.id == -1 ){ E[i] = vec2(epsilon); break;}
 		Hit.t-=0.05;if(Hit.t<epsilon)break;
 
 		vec3 normal, hit = ray.origin + ray.dir*Hit.t; int type;
@@ -267,44 +278,44 @@ vec4 Trace(Ray ray){
 		n = normalize(ray.dir-inDir);
 		ray.origin = hit;
 		ray.lastHit = Hit.id;
-		R[i] = GetRsRp(1.0f, 1.5f, dot(n, ray.dir));
-		I[i] = vec2(Intensity[tri.w]/2.f);
+		vec4 RT = GetRsRp(1.0f, 1.5f, dot(n, ray.dir));
+		R[i] = RT.xy; T[i] = RT.zw;
+		E[i] = sqrt(vec2(Intensity[tri.w]/2.f))*vec2(randsign(ray.seed), randsign(ray.seed));
 		
 		
 		polarInfoList[i] = PolarInfo(inDir, n, ray.dir);
 
 		//Russian Roulette Path Termination
-		float p = min(0.95, max(I[i].x, I[i].y));
+		float p = min(0.95, max(abs(E[i].x), abs(E[i].y)));
 		if(i >= MAX_BOUNCE)
 			if(rand(ray.seed)>p){
 				break;
 			}
 	}
 	//R & I are reflectivity and intensity, i is reflection times plus one
-	vec2 res = vec2(I[i--]); int i_max = i;
-	float I_total = res.x+res.y;vec3 Polar = normalize(vec3(rand(ray.seed),rand(ray.seed),rand(ray.seed))-0.5); vec3 s,p;
+	vec2 res = vec2(E[i--]); int i_max = i;
+	float E_total = length(res); vec3 Polar = normalize(vec3(rand(ray.seed),rand(ray.seed),rand(ray.seed))-0.5); vec3 s,p;
 	for(; i >= 0;i--){
-		//PolarInfo{ inDir, normal}
+		//PolarInfo{ indir, normal, outdir}
 		vec3 d = polarInfoList[i].outdir;
 		s = normalize(cross(polarInfoList[i].n, d));
 		p = normalize(cross(d,s));
 
-		
 		float a = dot(Polar,s), b = dot(Polar, p);
 		vec2 sign_res = sign(vec2(a,b));
-		res = I_total*pow(vec2(a,b),vec2(2));
+		res = E_total*vec2(a,b);
 
-		res = I[i]*(1-R[i]) + R[i]*res;
-		I_total = res.x+res.y;
+		res = E[i]*T[i] + R[i]*res;
+		E_total = length(res);
+
 		p = normalize(cross(polarInfoList[i].indir,s));
-		vec2 n_res = sqrt(res/I_total)*sign_res;
-	
-		Polar = n_res.x * s + n_res.y * p;
+		
+		Polar = res.x/E_total * s + res.y/E_total * p;
 	}
 	
 	float x = Polar.x, y = Polar.y;
-	//return I_total*vec4(x*x);
-	return I_total*vec4(x*x,y*y,(x+y)*(x+y)/2.f,(x-y)*(x-y)/2.f);
+	//return E_total*E_total*vec4(x*x);
+	return E_total*E_total*vec4(x*x,y*y,(x+y)*(x+y)/2.f,(x-y)*(x-y)/2.f);
 }
 void main(void)
 {
