@@ -1,0 +1,47 @@
+
+/***************************start************************/
+vec4 GetRsRp(float n1, float n2, float cos_i){
+	cos_i = abs(cos_i);
+	float cos_t = sqrt(1 - (n1*n1)/(n2*n2)*(1-cos_i*cos_i));
+	float rs = (n1*cos_i-n2*cos_t)/(n1*cos_i+n2*cos_t); 
+	float rp = (n1*cos_t-n2*cos_i)/(n1*cos_t+n2*cos_i); 
+	float ts = 2*n2*cos_t/(n2*cos_t+n1*cos_i); 
+	float tp = 2*n2*cos_t/(n2*cos_i+n1*cos_t);
+	return vec4(rs,rp,ts,tp);
+}
+/****************************end***********************/
+
+
+/****************************start************************/
+	vec4 RT = GetRsRp(1.0f, 1.5f, dot(n, ray.dir));
+	R[i] = RT.xy; T[i] = RT.zw;
+	E[i] = sqrt(vec2(Intensity[tri.w]/2.f))*vec2(randsign(ray.seed), randsign(ray.seed));
+/****************************end************************/
+
+
+/****************************start************************/
+//R & I are reflectivity and intensity, i is reflection times plus one
+	vec2 res = vec2(E[i--]); int i_max = i;
+	float E_total = length(res); vec3 Polar = normalize(vec3(rand(ray.seed),rand(ray.seed),rand(ray.seed))-0.5); vec3 s,p;
+	for(; i >= 0;i--){
+		//PolarInfo{ indir, normal, outdir}
+		vec3 d = polarInfoList[i].outdir;
+		s = normalize(cross(polarInfoList[i].n, d));
+		p = normalize(cross(d,s));
+
+		float a = dot(Polar,s), b = dot(Polar, p);
+		vec2 sign_res = sign(vec2(a,b));
+		res = E_total*vec2(a,b);
+
+		res = E[i]*T[i] + R[i]*res;
+		E_total = length(res);
+
+		p = normalize(cross(polarInfoList[i].indir,s));
+		
+		Polar = res.x/E_total * s + res.y/E_total * p;
+	}
+	
+	float x = Polar.x, y = Polar.y;
+	//return E_total*E_total*vec4(x*x);
+	return E_total*E_total*vec4(x*x,y*y,(x+y)*(x+y)/2.f,(x-y)*(x-y)/2.f);
+/****************************end************************/

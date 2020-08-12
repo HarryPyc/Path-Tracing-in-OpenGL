@@ -162,7 +162,7 @@ void search_tree(Ray ray, TreeNode node, float tMin, float tMax){
 	}
 }
 
-shared float seed;
+float seed;
 float rand(vec2 co){
 	seed++;
     return fract(sin(seed/Samples*dot(co ,vec2(12.9898,78.233))) * 43758.5453);
@@ -181,10 +181,10 @@ int randsign(vec2 _seed){
 	return rand(_seed)>0.5?1:-1;
 }
 float GetFaceBBp(vec2 coord){
-	const double c = 299792458, k = 138064852e-31, h = 2 * PI * 105457180e-42,
+	const float c = 299792458, k = 138064852e-31, h = 2 * PI * 105457180e-42,
 		v = 7.8576538e+02; //first wave length
 	const float T = mix(10,37,texture2D(oldman_temp, coord).x)+273.15;
-	return float(2e8 * (h * c * c * v * v * v) / (exp(float(100 * h * c * v / k / T)) - 1));
+	return 2e8 * (h * c * c * v * v * v) / (exp(100 * h * c * v / k / T) - 1);
 }
 struct PolarInfo{
 	vec3 indir, n, outdir;
@@ -278,9 +278,9 @@ vec4 Trace(Ray ray){
 		n = normalize(ray.dir-inDir);
 		ray.origin = hit;
 		ray.lastHit = Hit.id;
-		vec4 RT = GetRsRp(1.0f, 1.5f, dot(n, ray.dir));
+		vec4 RT = GetRsRp(1.0f, 1.1f, dot(n, ray.dir));
 		R[i] = RT.xy; T[i] = RT.zw;
-		E[i] = sqrt(vec2(Intensity[tri.w]/2.f))*vec2(randsign(ray.seed), randsign(ray.seed));
+		E[i] = sqrt(vec2(texture2D(oldman_temp,uv).x/2.f))*vec2(randsign(ray.seed), randsign(ray.seed));
 		
 		
 		polarInfoList[i] = PolarInfo(inDir, n, ray.dir);
