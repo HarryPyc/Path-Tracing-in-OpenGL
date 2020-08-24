@@ -47,7 +47,7 @@ void Texture2D::print(std::string name) {
     ofstream outFile(name);
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            for(int c = 0; c < 4; c++)
+            for(int c = 0; c < 3; c++)
             outFile << *(pixels+4*(i*width+j)+c)<<" ";
         }
         outFile << "\n";

@@ -1,47 +1,51 @@
 
 /***************************start************************/
-vec4 GetRsRp(float n1, float n2, float cos_i){
+vec2 GetRsRp(float n1, float n2, float cos_i){
 	cos_i = abs(cos_i);
 	float cos_t = sqrt(1 - (n1*n1)/(n2*n2)*(1-cos_i*cos_i));
 	float rs = (n1*cos_i-n2*cos_t)/(n1*cos_i+n2*cos_t); 
-	float rp = (n1*cos_t-n2*cos_i)/(n1*cos_t+n2*cos_i); 
-	float ts = 2*n2*cos_t/(n2*cos_t+n1*cos_i); 
-	float tp = 2*n2*cos_t/(n2*cos_i+n1*cos_t);
-	return vec4(rs,rp,ts,tp);
+	float rp = (n2*cos_i-n1*cos_t)/(n1*cos_t+n2*cos_i); 
+
+	return vec2(rs, rp);
+}
+mat3 GetRotateMatrix(float phi){
+	mat3 M;
+	float sin_2phi = sin(2*phi), cos_2phi = cos(2*phi);
+	M[0] = vec3(1,0,0);
+	M[1] = vec3(0,cos_2phi,-sin_2phi);
+	M[2] = vec3(0,sin_2phi, cos_2phi);
+	return M;
 }
 /****************************end***********************/
 
 
 /****************************start************************/
-	vec4 RT = GetRsRp(1.0f, 1.5f, dot(n, ray.dir));
-	R[i] = RT.xy; T[i] = RT.zw;
-	E[i] = sqrt(vec2(Intensity[tri.w]/2.f))*vec2(randsign(ray.seed), randsign(ray.seed));
+	R[i] = GetRsRp(1.0f, 1.5f, dot(n, ray.dir));
+	const float intensity = Intensity[tri.w], theta = 2*PI*rand(ray.seed); 
+	S[i] = vec3(1, cos(theta),sin(theta))*intensity;
 /****************************end************************/
 
 
 /****************************start************************/
 //R & I are reflectivity and intensity, i is reflection times plus one
-	vec2 res = vec2(E[i--]); int i_max = i;
-	float E_total = length(res); vec3 Polar = normalize(vec3(rand(ray.seed),rand(ray.seed),rand(ray.seed))-0.5); vec3 s,p;
+	vec3 res = vec3(S[i--]); int i_max = i;
+	vec3 s = vec3(epsilon); float phi = epsilon;
 	for(; i >= 0;i--){
-		//PolarInfo{ indir, normal, outdir}
+		//PolarInfo{ indir, normal, outdir}	
 		vec3 d = polarInfoList[i].outdir;
+		vec3 s_old = s;
 		s = normalize(cross(polarInfoList[i].n, d));
-		p = normalize(cross(d,s));
+		phi = acos(dot(s, s_old));
 
-		float a = dot(Polar,s), b = dot(Polar, p);
-		vec2 sign_res = sign(vec2(a,b));
-		res = E_total*vec2(a,b);
-
-		res = E[i]*T[i] + R[i]*res;
-		E_total = length(res);
-
-		p = normalize(cross(polarInfoList[i].indir,s));
-		
-		Polar = res.x/E_total * s + res.y/E_total * p;
+		res = GetRotateMatrix(phi)*res;
+		const float Rs = R[i].x*R[i].x, Rp = R[i].y*R[i].y;
+		mat3 Refl = mat3(vec3((Rs+Rp)/2, (Rs-Rp)/2, 0), vec3((Rs-Rp)/2, (Rs+Rp)/2,0), vec3(0,0,R[i].x*R[i].y)),
+			Trans = mat3(vec3(1-(Rs+Rp)/2, (Rp-Rs)/2, 0), vec3((Rp-Rs)/2, 1-(Rs+Rp)/2,0), vec3(0,0,sqrt((1-Rs)*(1-Rp))));
+		res = Refl*res + Trans*S[i];
 	}
+	vec3 s_cam = normalize(cross(vec3(0,0,-1),initDir));
+	phi = acos(0);
 	
-	float x = Polar.x, y = Polar.y;
-	//return E_total*E_total*vec4(x*x);
-	return E_total*E_total*vec4(x*x,y*y,(x+y)*(x+y)/2.f,(x-y)*(x-y)/2.f);
+	res = GetRotateMatrix(phi)*res;
+	return vec4(res,1);
 /****************************end************************/

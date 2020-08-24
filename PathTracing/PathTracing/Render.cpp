@@ -6,17 +6,27 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
-	cam = new Camera(glm::vec3(0,0,10), glm::vec3(0,0,0), glm::vec3(0, 1, 0));
+	cam = new Camera(glm::vec3(160, 150, 1100), glm::vec3(160, 150, 0), glm::vec3(0, 1, 0));
 	tree = new KdTree();
 	uploadThermalData(compute_shader, 0);
 
 	Samples = 0; nu = 0; isRight = true;
 
-	Mesh* obj1 = new Mesh("asset/model/oldman.obj"); 
-	obj1->transform->Translate(glm::vec3(0,-1,0));
+	Mesh* obj1 = new Mesh("asset/model/oldman_head.obj"); 
+	obj1->transform->Translate(glm::vec3(150, 0, 500)); obj1->transform->Scale(glm::vec3(100));
 	obj1->texture = new Texture2D("oldman_temp", "asset/texture/oldman_bbp.jpg");
-	obj1->material->mode = 0;
+	obj1->material->mode = 1;
 	meshes.push_back(obj1);
+
+	Mesh* obj2 = new Mesh("asset/model/oldman_eye.obj");
+	obj2->transform->Translate(glm::vec3(150, 0, 500)); obj1->transform->Scale(glm::vec3(100));
+	obj2->material->mode = 1;
+	meshes.push_back(obj2);
+
+	Mesh* obj3 = new Mesh("asset/model/oldman_plain.obj");
+	obj3->transform->Translate(glm::vec3(150, 0, 500)); obj1->transform->Scale(glm::vec3(100));
+	obj3->material->mode = 1;
+	meshes.push_back(obj3);    
 	
 	obj1->texture->activate(compute_shader, 1);
 
@@ -44,7 +54,7 @@ void Render::render() {
 
 	
 	//automatically print results
-	if (Samples == 4096 && nu <11) {
+	if (Samples == 2000 && nu <11) {
 		std::string name = "text/"+ std::to_string(nu)+"nu"+ std::to_string(Samples) + "spp"+".txt";
 		Render::getInstance().result->print(name);
 		result->clear(glm::vec4(0)); Samples = 0;
