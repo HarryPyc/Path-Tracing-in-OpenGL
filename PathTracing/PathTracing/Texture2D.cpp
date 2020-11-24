@@ -33,3 +33,10 @@ void Texture2D::print(std::string name) {
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     stbi_write_bmp(name.c_str(), width, height, 4, pixels);
 }
+
+void Texture2D::clear()
+{
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glClearTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}

@@ -2,11 +2,8 @@
 layout(binding = 0, rgba32f)uniform image2D result;
 layout (local_size_x = 32, local_size_y = 32) in;
 uniform int Samples = 1;
-uniform vec3 ray00;
-uniform vec3 ray01;
-uniform vec3 ray10;
-uniform vec3 ray11;
 uniform vec3 camPos;
+uniform mat4 invPV;
 
 const int SPECULAR = 0, DIFFUSE = 1, REFRACTION = 2, GLOSSY = 3;
 const int WIDTH = 1280, HEIGHT = 720;
@@ -64,7 +61,7 @@ shared Sphere spheres[] = {//Scene: radius, position, emission, color, material
    //Walls and light source
    Sphere(1e5, vec3(-1e5-80, 0, 0),    vec3(0),        vec3(.75,.25,.25),  DIFFUSE),//Left 
    Sphere(1e5, vec3(1e5+80, 0, 0),     vec3(0),        vec3(.25,.25,.75),  DIFFUSE),//Rght 
-   Sphere(1e5, vec3(0, 0, -1e5-45),    vec3(0),        vec3(.25,.75,.25),  DIFFUSE),//Back 
+   Sphere(1e5, vec3(0, 0, -1e5-100),    vec3(0),        vec3(.25,.75,.25),  DIFFUSE),//Back 
    Sphere(1e5, vec3(0, 0, 1e5+200),    vec3(0),        vec3(0.75),         DIFFUSE),//Frnt 
    Sphere(1e5, vec3(0, -1e5-45, 0),    vec3(0),        vec3(0.75),         DIFFUSE),//Bottom 
    Sphere(1e5, vec3(0,  1e5+45, 0),    vec3(0),        vec3(0.75),         DIFFUSE),//Top 
@@ -175,7 +172,11 @@ void main(void)
 	//start ray tracing
 	vec2 pos = vec2(pixel)/vec2(WIDTH, HEIGHT);
 	pos += vec2(rand(pixel), rand(pixel))*2e-3;//MSAA
-	vec3 dir = mix(mix(ray00,ray10,pos.x), mix(ray01,ray11,pos.x), pos.y);
+
+	pos = pos*2.f-1.f;
+	vec4 worldPos = invPV * vec4(pos, 1.f, 1.f);
+	worldPos /= worldPos.w;
+	vec3 dir = vec3(worldPos)-camPos;
 	vec3 color = Trace(Ray(camPos, normalize(dir), 0 , -1 ,pixel));
 
 	pixel.y = HEIGHT - pixel.y - 1;

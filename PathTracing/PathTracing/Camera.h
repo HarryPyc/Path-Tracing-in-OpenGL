@@ -12,12 +12,12 @@ class Camera
 {
 public:
 	glm::vec3 pos, dir, up;
+	float hfov, aspect;
 
 	glm::vec3 getTarget() { return pos + dir; }
 
-	glm::mat4 getPerspectiveMatrix(int w, int h);
+	glm::mat4 getPerspectiveMatrix();
 	glm::mat4 getViewMatrix();
-	void initRays();
 
 	void upload(GLuint program);
 	Camera(glm::vec3 _pos = glm::vec3(0, 0, 2), glm::vec3 _target = glm::vec3(0, 0, 0),

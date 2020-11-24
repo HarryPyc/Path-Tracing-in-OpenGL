@@ -6,11 +6,18 @@ void Render::init() {
 	quad_shader = InitShader(quad_vertex_shader.c_str(), quad_fragment_shader.c_str());
 	compute_shader = InitShader(quad_compute_shader.c_str());
 	result = new Texture2D("result", WINDOW_WIDTH, WINDOW_HEIGHT);
-	cam = new Camera(glm::vec3(0, -20, 150), glm::vec3(0), glm::vec3(0, 1, 0));
+	cam = new Camera(glm::vec3(0, -20, 150), glm::vec3(0, -10, 50), glm::vec3(0, 1, 0));
+	controller = new FPSController(cam);
 	Samples = 0;
 }
 void Render::render() {
+	if (needReset) {
+		Samples = 0;
+		result->clear();
+		needReset = false;
+	}
 	Samples++;
+	controller->update();
 	//ray tracing
 	glUseProgram(compute_shader);
 	result->activate(compute_shader, 0);

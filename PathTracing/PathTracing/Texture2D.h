@@ -14,6 +14,7 @@ public:
 
 	void activate(GLuint program, GLuint textureLoc);
 	void print(std::string name);
+	void clear();
 
 };
 
