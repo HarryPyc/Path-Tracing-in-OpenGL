@@ -70,7 +70,7 @@ shared Sphere spheres[] = {//Scene: radius, position, emission, color, material
 
 vec3 Trace(Ray ray){
 	vec3[MAX_BOUNCE*2] emits, colors;
-	int i; float f = 1.0; int object; //sphere0, cone1
+	int i; int object; //sphere0, cone1
 	//We cannot do recursion in shader, so I use for loop instead
 	for(i = 0; i < MAX_BOUNCE*2;i++){
 		//Detect intersection
@@ -113,6 +113,7 @@ vec3 Trace(Ray ray){
 				break;
 			}
 		//Different BRDFs
+		float pdf = 1.f;
 		if(type == SPECULAR){
 			ray.dir = reflect(ray.dir,n);
 		}
@@ -125,6 +126,7 @@ vec3 Trace(Ray ray){
 			//uniformly sampling on hemisphere
 			vec3 d = w*cos(2*PI*theta)*u + w*sin(2*PI*theta)*v + sqrt(1-w*w)*n;
 			ray.dir = d;
+			pdf = 1.f / 2*PI;
 		}
 		else if(type == REFRACTION){
 			float nc = 1.0, ng = 1.5; //Refraction index
@@ -141,6 +143,7 @@ vec3 Trace(Ray ray){
 					ray.dir = reflect(ray.dir, n);
 				else{
 					ray.dir= (eta * ray.dir - (eta * dot(n, ray.dir) + sqrt(k)) * n);
+					n = -n;
 				}
 			}
 		}else if(type == GLOSSY){
@@ -156,7 +159,7 @@ vec3 Trace(Ray ray){
 		ray.origin = hit;
 		ray.lastHit = id;
 		emits[i] = emission;
-		colors[i] = color * f;
+		colors[i] = color * dot(ray.dir, n) / pdf;
 	}
 	vec3 res = vec3(0);
 	for(; i >=0;i--){
