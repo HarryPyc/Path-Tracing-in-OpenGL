@@ -126,7 +126,7 @@ vec3 Trace(Ray ray){
 			//uniformly sampling on hemisphere
 			vec3 d = w*cos(2*PI*theta)*u + w*sin(2*PI*theta)*v + sqrt(1-w*w)*n;
 			ray.dir = d;
-			pdf = 1.f / 2*PI;
+			//pdf = 1.f / 2.f;
 		}
 		else if(type == REFRACTION){
 			float nc = 1.0, ng = 1.5; //Refraction index
